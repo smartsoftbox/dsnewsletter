@@ -1,0 +1,40 @@
+.fullscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  overflow-y: scroll;
+
+  .panel {
+    border-radius: 0 !important;
+    border: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  #generate {
+    cursor: pointer;
+  }
+
+  .email-frame {
+    width: 100%;
+  }
+
+  /*Fix for 1.6 chosen*/
+  .chosen-container {
+    width: 100% !important;
+    border: 1px solid #c7d6db;
+    border-radius: 2px;
+    margin: 0 auto;
+  }
+
+  #templates {
+    text-align: center;
+    padding-top: 70px;
+  }
+
+  .modal-backdrop {
+    z-index: 1048;
+  }
+}

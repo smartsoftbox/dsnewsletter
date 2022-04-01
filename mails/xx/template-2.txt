@@ -1,0 +1,35 @@
+{shop_url}
+
+FRESH FEATURED PRODUCTS FROM OUR MARKETPLACE
+
+A collection of cool featured products selected for you.
+
+{product|featured:1|name}
+
+{product|featured:1|desc:100}
+
+{product|featured:1|link}
+
+{product|featured:2|name}
+
+{product|featured:2|desc:100}
+
+{product|featured:2|link}
+
+{product|featured:3|name}
+
+{product|featured:3|desc:100}
+
+{product|featured:3|link}
+
+{product|featured:4|name}
+
+{product|featured:4|desc:100}
+
+{product|featured:4|link}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+[{shop_name}]({shop_url})
+
+Powered by [PrestaShop](https://www.prestashop.com/?utm_source=marchandprestashop&utm_medium=e-mail&utm_campaign=footer_1-7)

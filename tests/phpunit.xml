@@ -1,0 +1,13 @@
+<phpunit bootstrap="bootstrap.php"
+         convertErrorsToExceptions="false"
+         convertNoticesToExceptions="false"
+         convertWarningsToExceptions="false">
+  <testsuites>
+    <testsuite name="Unit">
+      <directory>Unit</directory>
+    </testsuite>
+    <testsuite name="Integration">
+      <directory>Integration</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
