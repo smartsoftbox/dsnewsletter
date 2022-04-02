@@ -28,7 +28,9 @@
                 <a id="generate_featured_tags" class="btn btn-default">Generate featured product tags</a>
                 <div id="tags">
                     {foreach $tags as $tag}
-                        <a class="btn-tag btn btn-default"  data-clipboard-text="{$tag}">{$tag}</a>
+                        <a class="btn-tag btn btn-default"  data-clipboard-text="{$tag|escape:'html':'UTF-8'}">
+                            {$tag|escape:'html':'UTF-8'}
+                        </a>
                     {/foreach}
                 </div>
             </div>
@@ -37,7 +39,11 @@
     <div class="tab-pane" id="text">
         <div class="block-mail" >
             <div class="mail-form">
-                <div><textarea class="rte noEditor" id="plaintext" name="plaintext">{$text_content}</textarea></div>
+                <div>
+                    <textarea class="rte noEditor" id="plaintext" name="plaintext">
+                        {$text_content|escape:'html':'UTF-8'}
+                    </textarea>
+                </div>
                 <span id="generate" class="btn-tag btn btn-default">auto generate</span>
             </div>
         </div>
@@ -47,7 +53,7 @@
     </div>
     <script src="http://editor.unlayer.com/embed.js"></script>
     <script>
-        let placeholder = '{$placeholder}'; // image product url for tags
+        let placeholder = '{$placeholder|escape:'html':'UTF-8'}'; // image product url for tags
         document.addEventListener("DOMContentLoaded", function(event) {
             // Your code to run since DOM is loaded and ready
             unlayer.init({

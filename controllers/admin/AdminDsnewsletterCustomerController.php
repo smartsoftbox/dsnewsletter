@@ -137,6 +137,10 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
         ));
     }
 
+    /**
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     */
     public function initProcess()
     {
         parent::initProcess();
@@ -151,7 +155,8 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
 
         foreach ($this->bulk_actions as $bulk_action => $params) {
             if (Tools::isSubmit('submitBulk' . $bulk_action . $this->table)) {
-                if (str_contains($bulk_action, 'addToList') || str_contains($bulk_action, 'removeFromList')) {
+                if (strpos($bulk_action, 'addToList') !== false ||
+                    strpos($bulk_action, 'removeFromList') !== false) {
                     $this->boxes = Tools::getValue($this->table . 'Box');
                     $this->updateListSelectedCustomer(new DslistClass($this->id_list), $this->boxes, $bulk_action);
                     break;
@@ -207,10 +212,10 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
     {
         $selected_customers = explode(',', $list->selected_customer);
         foreach ($boxes as $id_customer) {
-            if ( str_contains($action, 'addToList') && !in_array($id_customer, $selected_customers) ) {
+            if ( strpos($action, 'addToList') !== false && !in_array($id_customer, $selected_customers) ) {
                 $selected_customers[] = $id_customer;
             }
-            if ( str_contains($action, 'removeFromList') ) { // remove
+            if ( strpos($action, 'removeFromList') !== false ) { // remove
                 $this->removeCustomerFromList($selected_customers, $id_customer);
             }
             if ( $action === 'toggle' ) {

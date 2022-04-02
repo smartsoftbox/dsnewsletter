@@ -897,7 +897,6 @@ class Dsnewsletter extends Module
     public function displayAddListForm()
     {
         $id_dslist = (int)Tools::getValue('id_dslist');
-
         $languages = Language::getLanguages(false);
         foreach ($languages as $k => $language) {
             $languages[$k]['is_default'] = (int)($language['id_lang'] == Configuration::get('PS_LANG_DEFAULT'));
@@ -1418,6 +1417,8 @@ class Dsnewsletter extends Module
         $helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name.
             '&updatedstemplate'.($id_template ? '&id_dstemplate='.$id_template : '');
         $helper->submit_action = 'submitAddDstemplate';
+        $helper->show_toolbar = true;
+
         $template_id_lang = (Tools::getValue('template_id_lang')?: Configuration::get('PS_LANG_DEFAULT'));
 
         $template = new DstemplateClass($id_template);

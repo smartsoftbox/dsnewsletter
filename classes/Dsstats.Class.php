@@ -98,9 +98,13 @@ class DsstatsClass extends ObjectModel
         );
     }
 
-    public static function getStatsByNewsletterID($id_newsletter = false, $last_30 = false, $order = "ASC", $failed_number = true)
-    {
-        if(!$id_newsletter) {
+    public static function getStatsByNewsletterID(
+        $id_newsletter = false,
+        $last_30 = false,
+        $order = "ASC",
+        $failed_number = true
+    ) {
+        if (!$id_newsletter) {
             return array();
         }
 
@@ -110,9 +114,9 @@ class DsstatsClass extends ObjectModel
             ($last_30 ? " AND  date_sent BETWEEN NOW() - INTERVAL 30 DAY AND NOW() " : "" ) .
             " ORDER BY s.id_dsstats " . $order);
 
-        if($failed_number) {
+        if ($failed_number) {
             array_walk($newsletter, function (&$newsletter) {
-               $newsletter['failed'] = count( explode(',', $newsletter['failed']) );
+                $newsletter['failed'] = count(explode(',', $newsletter['failed']));
             });
         }
 
@@ -132,9 +136,9 @@ class DsstatsClass extends ObjectModel
         $stats = self::getStatsByNewsletterID($id_newsletter, true, "ASC");
 
         foreach ($stats as $key => $stat) {
-            foreach ($total as $field => $value) {
-                $name = str_replace('total_', '' , $field);
-                if(isset($stat[$name])) {
+            foreach (array_keys($total) as $field) {
+                $name = str_replace('total_', '', $field);
+                if (isset($stat[$name])) {
                     $total[$field] += (int)$stat[$name];
                 }
             }

@@ -32,7 +32,7 @@ $(function () {
 
         d3.select('#chart svg')    //Select the <svg> element you want to render the chart in.
             .attr("preserveAspectRatio", "xMinYMin meet")
-            .attr("viewBox", "0 0 720 340")
+            .attr("viewBox", "0 0 720 380")
             .datum(myData)         //Populate the <svg> element with chart data...
             .call(chart);          //Finally, render the chart!
 
