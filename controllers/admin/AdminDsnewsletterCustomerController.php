@@ -98,7 +98,7 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
 
     public function initPageHeaderToolbar()
     {
-        $this->page_header_toolbar_title = 'No lists';
+        $this->page_header_toolbar_title = 'Please create selected customer list';
 
         foreach ($this->lists as $list) {
             $this->page_header_toolbar_btn['list_' . $list['id_dslist']] = array(

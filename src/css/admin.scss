@@ -7,8 +7,18 @@
     margin-top: -4px;
     width: 14px;
 }
+
 #links .badge {
     font-size: 0.8em;
+}
+
+.reduced-opacity {
+  opacity: 0.5;
+}
+
+/*Fix for 1.6 chosen*/
+.chosen-container {
+  width: 100% !important;
 }
 
 /*end panel*/
@@ -154,18 +164,8 @@ label.none{
     height: 100px;
     z-index: 9000;
 }
-#fancybox-loading {
-    display: none;
-}
 ul.nav.nav-pills {
     margin-bottom: 10px;
-}
-#tags a, #tags div a {
-    margin-bottom: 5px;
-    padding: 5px;
-}
-#tags div a {
-    margin-right: 5px;
 }
 #text {
     position: relative;
@@ -199,4 +199,44 @@ ul.nav.nav-pills {
 }
 #select-newsletter-wrapper {
   margin-bottom: 10px;
+}
+#completion_mail_wrapper {
+  margin-bottom: -10px !important;
+}
+#generate_new_tags, #generate_featured_tags {
+  margin-bottom: 5px;
+}
+
+/* Progressbar */
+#completion_mail_wrapper {
+  display: none;
+  padding: 5px !important;
+
+  #newsletter_progressbar {
+    margin-top: 5px;
+    width: 100%;
+    height: 7px;
+    position: relative;
+  }
+
+  #newsletter_progressbar_tab {
+    border: none;
+    background: #ECECEC;
+    height: 12px;
+    position: relative;
+    width: 100%;
+  }
+
+  #newsletter_progressbar_tab .ui-progressbar-value {
+    background: #ef1d1d;
+    border: 1px solid #8aa96d;
+    position: absolute;
+    top: 0;
+  }
+
+  #newsletter_progressbar_tab .ui-widget-header {
+    height: 17px;
+    margin: 3px;
+    border: none;
+  }
 }

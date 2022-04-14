@@ -15,9 +15,9 @@
                         Please select newsletter
                     </option>
                     {foreach from=$newsletters item=newsletter}
-                        <option value="{$base}&id_newsletter={$newsletter.id_dsnewsletter}"
+                        <option value="{$base|escape:'html':'UTF-8'}&id_newsletter={$newsletter.id_dsnewsletter|escape:'intval':'UTF-8'}"
                                 {if $newsletter.id_dsnewsletter === $id_newsletter}selected="selected"{/if}>
-                            {$newsletter.name}
+                            {$newsletter.name|escape:'html':'UTF-8'}
                         </option>
                     {/foreach}
                 </select>
@@ -28,7 +28,7 @@
                         <i class="icon-envelope-alt"></i>
                         <span class="title">Total Send</span>
                         <span class="subtitle">30 days</span>
-                        <span class="value">{$total_sent_number}</span>
+                        <span class="value">{$total_sent_number|escape:'intval':'UTF-8'}</span>
                     </div>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                         <i class="icon-folder-open-alt"></i>
                         <span class="title">Total Open</span>
                         <span class="subtitle">30 days</span>
-                        <span class="value">{$total_open}</span>
+                        <span class="value">{$total_open|escape:'intval':'UTF-8'}</span>
                     </div>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                         <i class="icon-link"></i>
                         <span class="title">Total Click</span>
                         <span class="subtitle">30 days</span>
-                        <span class="value">{$total_click}</span>
+                        <span class="value">{$total_click|escape:'intval':'UTF-8'}</span>
                     </div>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                         <i class="icon-exclamation-sign"></i>
                         <span class="title">Total Failed</span>
                         <span class="subtitle">30 days</span>
-                        <span class="value">{$total_failed}</span>
+                        <span class="value">{$total_failed|escape:'intval':'UTF-8'}</span>
                     </div>
                 </div>
             </div>

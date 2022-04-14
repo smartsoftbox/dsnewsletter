@@ -32,6 +32,7 @@ class Tags
         '{subscribe}',
         '{unsubscribe}',
         '{charset}',
+        '{track}',
     );
     private $id_lang;
     private $first_name;
@@ -44,6 +45,8 @@ class Tags
     private $tags_product_id;
     private $tags;
     private $id_stats;
+    private $context;
+    private $token;
 
     public function __construct(
         $content,
@@ -65,6 +68,17 @@ class Tags
         $this->id_customer = $id_customer;
         $this->id_stats = $id_stats;
         $this->id_subscribe = $id_subscribe;
+        $this->context = Context::getContext();
+        $this->token = $this->getNewsletterToken();
+    }
+
+    public static function getTagsLabelsWithoutTrack()
+    {
+        $tags = self::$tags_label;
+        if (($key = array_search(TAG_TRACK, $tags)) !== false) {
+            unset($tags[$key]);
+        }
+        return $tags;
     }
 
     /**
@@ -75,12 +89,26 @@ class Tags
         return Tools::getHttpHost(true) . __PS_BASE_URI__ . "modules/dsnewsletter/";
     }
 
+    public function getNewsletterControllerLink()
+    {
+        return $this->context->link->getModuleLink(
+            'dsnewsletter',
+            'newsletter',
+            array( 'token' => $this->token )
+        );
+    }
+
     /**
      * @return string
      */
     public function getNewsletterToken()
     {
-        return substr(Tools::encrypt('dsnewsletter/token'), 0, 10);
+        $token_name = 'dsnewsletter/token/' . implode(
+            '/',
+            array($this->id_subscribe, $this->id_customer, $this->id_lang, $this->id_stats)
+        );
+
+        return Tools::substr(Tools::encrypt($token_name), 0, 10);
     }
 
     public static function addWrapperTagToLinks($content)
@@ -116,10 +144,10 @@ class Tags
         $this->tags_product_new = $this->getProductsNbByType(NEWP, $this->tags);
         $this->tags_product_featured = $this->getProductsNbByType(FEATURED, $this->tags);
         $this->tags_product_id = $this->getProductsNbByType(ID, $this->tags);
-        // get new products with tag name as key
-        $new_products_with_nb_key = $this->getNewProductsWithTagNameAsKey();
         // get featured products with tag name as key
         $featured_products_with_nb_key = $this->getFeaturedProductsWithTagNameAsKey();
+        // get new products with tag name as key
+        $new_products_with_nb_key = $this->getNewProductsWithTagNameAsKey();
 
         foreach ($this->tags as $tag) {
             $copy_tag = $tag;
@@ -313,8 +341,8 @@ class Tags
 
     public function getTrack()
     {
-        return '<img src="' . $this->getModuleBaseUrl() . 'mails/track/track.gif?id_dsnewsletter=' .
-            $this->id_newsletter . '" />';
+        return '<img src="' . $this->getModuleBaseUrl() . 'mails/track/track.gif?idst=' .
+            Dsnewsletter::encryptText($this->id_stats) . '" />';
     }
 
     public function getClickWrapper()
@@ -330,10 +358,12 @@ class Tags
             'idn' => $this->id_newsletter,
             'idl' => $this->id_lang,
             'idst' => $this->id_stats,
-            'token' => $this->token,
             'action' => $action,
         );
-        return $this->getModuleBaseUrl() . 'newsletter.php?' . http_build_query($data);
+        //encrypt ids and action
+        $data_encrypt = array_map('Dsnewsletter::encryptText', $data);
+
+        return $this->getNewsletterControllerLink() . '&' . http_build_query($data_encrypt);
     }
 
     /**
@@ -393,6 +423,8 @@ class Tags
         $new_products_with_nb_key = null;
         if ($this->tags_product_new) {
             $new_products = Product::getNewProducts($this->id_lang, 0, count($this->tags_product_new));
+            // check if enough products if not take random
+            $this->getRandomProductsIfNeeded($new_products, $this->tags_product_new);
             $i = 0;
             foreach ($this->tags_product_new as $tag_product_new) {
                 //tag name as key for new products
@@ -401,6 +433,39 @@ class Tags
             }
         }
         return $new_products_with_nb_key;
+    }
+
+    /**
+     * get New Products with tag name as key
+     */
+    private function getRandomProductsIfNeeded(&$products, $tags)
+    {
+        if(is_array($products) && count($products) === count($tags)) {
+            return;
+        }
+
+        $number = count($tags) - (is_array($products) ? count($products) : 0);
+        $category = new Category(Context::getContext()->shop->getCategory(), (int)$this->id_lang);
+
+        $additional_products = $category->getProducts(
+            $this->id_lang,
+            0,
+            $number,
+            null,
+            null,
+            false,
+            true,
+            true,
+            $number
+        );
+
+        if(!$products) {
+            $products = $additional_products;
+        } else {
+            foreach ($additional_products as $additional_product) {
+                $products[] = $additional_product;
+            }
+        }
     }
 
     /**
@@ -423,6 +488,8 @@ class Tags
                 true,
                 count($this->tags_product_featured)
             );
+            // check if there is enough featured if not take rando
+            $this->getRandomProductsIfNeeded($featured_products, $this->tags_product_featured);
             $i = 0;
             foreach ($this->tags_product_featured as $tag_product_featured) {
                 $featured_products_with_nb_key[$tag_product_featured] = $featured_products[$i];

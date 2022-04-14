@@ -1,9 +1,10 @@
-{shop_url}
+YOU'RE ALMOST THERE!
+We noticed that you were browsing our shop but that you haven't checked out.
+Please feel free to contact us if you have any question.
 
-You're almost there!
+$50
 
-We noticed that you were browsing our shop but that you haven't checked out. Please feel free to contact us if you have any question.
+VTB5B7UW
 
-[{shop_name}]({shop_url})
-
-Powered by [PrestaShop](https://www.prestashop.com/?utm_source=marchandprestashop&utm_medium=e-mail&utm_campaign=footer_1-7)
+{shop_name}
+Powered by PrestaShop

@@ -1,3 +1,5 @@
 config.xml
 node_modules/
 vendor/
+mails/en
+mails/fr

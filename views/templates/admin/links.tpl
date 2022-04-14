@@ -5,17 +5,12 @@
 *  International Registered Trademark & Property of Smart Soft
 *}
 
-<div id="overlay">
-    <div id="progress-wrapper">
-        <div id="progress">estimating...</div>
-    </div>
-</div>
 <div class="row">
     <div class="col-lg-12">
         <div class="row">
             <div class="col-lg-2 col-md-3">
                 <div class="list-group" id="links">
-                    <a href="{$currentIndex|escape:'htmlall':'UTF-8'}&lists=1" class="list-group-item">
+                    <a href="{$currentIndex|escape:'html':'UTF-8'}&lists=1" class="list-group-item">
                         <i class="icon-list"></i>
                         <span>Lists</span><span class="badge badge-success">1</span>
                     </a>

@@ -15,13 +15,17 @@ class DsnewsletterClass extends ObjectModel
     public $status;
     public $id_template;
     public $id_list;
-    public $date_start;
-    public $date_planned;
+    public $last_date;
     public $id_lang;
     public $sender_name;
     public $sender_email;
-    public $auto;
-    public $frequency;
+    public $active;
+    /* cron */
+    public $cron_hour;
+    public $cron_day;
+    public $cron_week;
+    public $cron_month;
+    public $cron;
 
     public static $definition = array(
         'table' => 'dsnewsletter',
@@ -30,13 +34,17 @@ class DsnewsletterClass extends ObjectModel
             'name' =>                   array('type' => self::TYPE_STRING, 'validate' => 'isString'),
             'status' =>                 array('type' => self::TYPE_BOOL, 'validate' => 'isUnsignedId'),
             'id_template' =>            array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
-            'id_list' =>            array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
-            'date_start' =>             array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat'),
-            'date_planned' =>           array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat'),
+            'id_list' =>                array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+            'last_date' =>              array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat'),
             'id_lang' =>                array('type' => self::TYPE_STRING, 'validate' => 'isString'),
             'sender_name' =>            array('type' => self::TYPE_STRING, 'validate' => 'isString'),
-            'auto' =>                   array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
-            'frequency' =>              array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId')
+            'active' =>                 array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+            /* cron */
+            'cron_hour' =>              array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 255),
+            'cron_day' =>               array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 255),
+            'cron_week' =>              array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 255),
+            'cron_month' =>             array('type' => self::TYPE_STRING, 'validate' => 'isString', 'size' => 255),
+            'cron' =>               array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
         )
     );
 
@@ -76,13 +84,16 @@ class DsnewsletterClass extends ObjectModel
                                         `sender_name` varchar(255) NOT NULL,
                                         `sender_email` varchar(355) NOT NULL,
                                         `status` int(10) NOT NULL DEFAULT 0,
-                                        `auto` BOOL NOT NULL DEFAULT 0,
-                                        `frequency` int(10) NOT NULL,
                                         `id_template` int(10) NOT NULL,
                                         `id_list` int(10) NOT NULL,
-                                        `date_start` DATETIME NOT NULL,
-                                        `date_planned` DATETIME,
+                                        `last_date` DATETIME,
                                         `id_lang` varchar(255) NOT NULL, 
+                                        `cron_hour` varchar(255) NOT NULL,
+                                        `cron_day` varchar(255) NOT NULL,
+                                        `cron_week` varchar(255) NOT NULL,
+                                        `cron_month` varchar(255) NOT NULL,
+                                        `cron` BOOL NOT NULL DEFAULT 0,
+                                        `active` BOOL NOT NULL DEFAULT 0,
                                         PRIMARY KEY  (`id_dsnewsletter`)
                                         ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8')) {
             return false;
@@ -112,7 +123,7 @@ class DsnewsletterClass extends ObjectModel
                 $list = new DslistClass($new['id_list']);
                 $news[$key]['list_name'] = $list->name;
                 $news[$key]['status'] = $new['status'];
-                $news[$key]['frequency'] = Frequency::$frequency[$news[$key]['frequency']]['name'];
+                $news[$key]['cron'] = $new['cron'];
             }
         }
 
@@ -157,15 +168,20 @@ class DsnewsletterClass extends ObjectModel
         $fields['id_dsnewsletter'] = (int)($this->id);
         $fields['name'] = (string)($this->name);
         $fields['status'] = (int)($this->status);
-        $fields['auto'] = (bool)($this->auto);
         $fields['id_template'] = (int)($this->id_template);
         $fields['id_list'] = (int)($this->id_list);
-        $fields['date_start'] = (string)($this->date_start);
-        $fields['date_planned'] = (string)($this->date_planned);
+        $fields['last_date'] = (string)($this->last_date);
         $fields['sender_name'] = (string)($this->sender_name);
         $fields['sender_email'] = (string)($this->sender_email);
         $fields['id_lang'] = (string)($this->id_lang);
-        $fields['frequency'] = (int)($this->frequency);
+        $fields['active'] = (int)($this->active);
+
+        $fields['cron_hour'] = (string)($this->cron_hour);
+        $fields['cron_day'] = (string)($this->cron_day);
+        $fields['cron_week'] = (string)($this->cron_week);
+        $fields['cron_month'] = (string)($this->cron_month);
+
+        $fields['cron'] = (int)($this->cron);
 
         return $fields;
     }

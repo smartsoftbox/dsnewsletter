@@ -9,7 +9,7 @@ const sync = require("browser-sync").create();
 const del = require("del");
 
 function miniJS(cb) {
-    src(['src/js/admin.js', 'src/js/add_template.js'])
+    src(['src/js/admin.js', 'src/js/add_template.js', 'src/js/statistics.js'])
         // .pipe(concat('bundle.js'))
         .pipe(minify({noSource: true}))
         // .pipe(filter(['src/js/admin.js', 'src/js/bundle-min.js']))
@@ -22,7 +22,7 @@ function miniJS(cb) {
 }
 
 function miniCSS(cb) {
-    src(['src/sass/*.scss'])
+    src(['src/css/*.scss'])
         // .pipe(concat('stylesheet.css'))
         .pipe(sass().on('error', sass.logError))
         .pipe(cleanCss())

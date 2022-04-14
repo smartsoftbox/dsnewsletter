@@ -17,24 +17,30 @@ class DsnewsletterNewsletterModuleFrontController extends ModuleFrontController
      */
     public function postProcess()
     {
-        if (Tools::substr(Tools::encrypt('/dsnewsletter/token'), 0, 10) != Tools::getValue('token')
-            || !Module::isInstalled('dsnewsletter')) {
-            Tools::redirect('index.php');
-            die();
-        }
-
         $id_subscriber = (int)Dsnewsletter::decryptText( Tools::getValue('ids') );
         $id_customer = (int)Dsnewsletter::decryptText( Tools::getValue('idc') );
         $id_lang = (int)Dsnewsletter::decryptText( Tools::getValue('idl') );
         $id_stats = (int)Dsnewsletter::decryptText( Tools::getValue('idst') );
         $action = (string)Dsnewsletter::decryptText( Tools::getValue('action') );
 
+        $token_name = 'dsnewsletter/token/' .
+            implode('/', array($id_subscriber, $id_customer, $id_lang, $id_stats));
+
+        if (Tools::substr(Tools::encrypt($token_name), 0, 10)
+            !== Tools::getValue('token')
+            || !Module::isInstalled('dsnewsletter')) {
+            Tools::redirect('index.php');
+            die();
+        }
+
         if($action === SUBSCRIBE || $action === UNSUBSCRIBE) {
             $sub = ($action === SUBSCRIBE ? 1 : 0);
             if ($id_customer) {
                 $this->changeCustomerSub($id_customer, $sub);
+                $this->addUnsubscribe($id_stats);
             } elseif ($id_subscriber) {
                 $this->changeNewsletterSub($id_subscriber, $sub);
+                $this->addUnsubscribe($id_stats);
             }
         }
 
@@ -44,17 +50,21 @@ class DsnewsletterNewsletterModuleFrontController extends ModuleFrontController
         }
     }
 
-
     /**
      * @see FrontController::initContent()
      */
     public function initContent()
     {
         parent::initContent();
-        $this->context->smarty->assign('message', $this->message);
+
+        $is_16 = _PS_VERSION_ < 1.7;
+        $this->context->smarty->assign(array(
+            'message' => $this->message,
+            'is_16' => $is_16
+        ));
 
         $template = 'newsletter.tpl';
-        if (_PS_VERSION_ > 1.6) {
+        if (!$is_16) {
             $template = 'module:dsnewsletter/views/templates/front/' . $template;
         }
 
@@ -105,7 +115,8 @@ class DsnewsletterNewsletterModuleFrontController extends ModuleFrontController
      */
     private function addClick($id_stats)
     {
-        if (!isset($_COOKIE["is_already_click"])) {
+        // need id_stats so you can click other newsletters
+        if (!isset($_COOKIE["is_already_click_" . $id_stats])) {
             if ($id_stats && Validate::isInt($id_stats)) {
                 try {
                     $stats = new DsstatsClass($id_stats);
@@ -113,7 +124,26 @@ class DsnewsletterNewsletterModuleFrontController extends ModuleFrontController
                     $stats->save();
                 } catch (PrestaShopException $e) {
                 }
-                setcookie("is_already_click", 1, strtotime('+1 day'));
+                setcookie("is_already_click_" . $id_stats, 1, strtotime('+1 day'));
+            }
+        }
+    }
+
+    /**
+     * @param $id_stats
+     * @return void
+     */
+    private function addUnsubscribe($id_stats)
+    {
+        if (!isset($_COOKIE["is_already_unsubscribe"])) {
+            if ($id_stats && Validate::isInt($id_stats)) {
+                try {
+                    $stats = new DsstatsClass($id_stats);
+                    $stats->unsubscribe += 1;
+                    $stats->save();
+                } catch (PrestaShopException $e) {
+                }
+                setcookie("is_already_unsubscribe", 1, strtotime('+1 day'));
             }
         }
     }

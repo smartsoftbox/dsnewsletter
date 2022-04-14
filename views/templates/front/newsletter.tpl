@@ -5,5 +5,19 @@
 *  International Registered Trademark & Property of Smart Soft
 *}
 
-<p class="alert alert-success">{$message}</p>
+{if $is_16}
 
+    <p class="alert alert-success">{$message|escape:'intval':'UTF-8'}</p>
+
+{else}
+
+{extends file='page.tpl'}
+
+{block name='page_header_container'}
+{/block}
+
+{block name='page_content_container'}
+    <p class="alert alert-success">{$message|escape:'intval':'UTF-8'}</p>
+{/block}
+
+{/if}

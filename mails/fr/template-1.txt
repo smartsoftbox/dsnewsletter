@@ -1,35 +1,29 @@
-{shop_url}
-
 FRESH NEW PRODUCTS FROM OUR MARKETPLACE
-
 A collection of cool new products selected for you.
 
-{product|new:1|name}
+{PRODUCT_NEW_1_NAME}
+{product_new_1_desc_80}
 
-{product|new:1|desc:100}
+[View]
+{product_new_1_link}
 
-{product|new:1|link}
+{PRODUCT_NEW_2_NAME}
+{product_new_2_desc_80}
 
-{product|new:2|name}
+[View]
+{product_new_2_link}
 
-{product|new:2|desc:100}
+{PRODUCT_NEW_3_NAME}
+{product_new_3_desc_80}
 
-{product|new:2|link}
+[View]
+{product_new_3_link}
 
-{product|new:3|name}
+{PRODUCT_NEW_4_NAME}
+{product_new_4_desc_80}
 
-{product|new:3|desc:100}
+[View]
+{product_new_4_link}
 
-{product|new:3|link}
-
-{product|new:4|name}
-
-{product|new:4|desc:100}
-
-{product|new:4|link}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-[{shop_name}]({shop_url})
-
-Powered by [PrestaShop](https://www.prestashop.com/?utm_source=marchandprestashop&utm_medium=e-mail&utm_campaign=footer_1-7)
+{shop_name}
+Powered by PrestaShop

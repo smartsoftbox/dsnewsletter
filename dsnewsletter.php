@@ -14,10 +14,12 @@ if (!defined('_PS_VERSION_')) {
 
 define('NEWSLETTER', 'newsletter');
 define('TEMPLATE', 'template');
+define('DESIGN', 'design');
 define('FILETYPE_TXT', 'txt');
 define('FILETYPE_HTML', 'html');
+define('FILETYPE_JSON', 'json');
 define('TAG_CLICK', '{Click_Wrapper}');
-define('TAG_TRACK', '{Track}');
+define('TAG_TRACK', '{track}');
 define('PRODUCT_IMAGE', 'tag.jpg');
 
 class Dsnewsletter extends Module
@@ -32,7 +34,6 @@ class Dsnewsletter extends Module
         $this->author = 'DevSoft';
         $this->module_key = '65056cdb693e390a5cd199335c27dcdb';
         $this->bootstrap = true;
-
 
         $this->controllers = array('newsletter');
         parent::__construct();
@@ -101,10 +102,8 @@ class Dsnewsletter extends Module
         if (!Configuration::updateValue('DSNEWSLETTER_SECURE_KEY', Tools::strtoupper(Tools::passwdGen(16))) ||
         !Configuration::updateValue('DSNEWSLETTER_CRON_TIME', date('Y-m-d H:i:s')) ||   // Cron time
         !Configuration::updateValue('DSNEWSLETTER_TEST_EMAIL', Configuration::get('PS_SHOP_EMAIL')) ||
-        !Configuration::updateValue('DSNEWSLETTER_EMAIL_NUMBER', '50') ||
         !Configuration::updateValue('DSNEWSLETTER_REPORT_EMAIL', Configuration::get('PS_SHOP_EMAIL')) ||
-        !Configuration::updateValue('DSNEWSLETTER_SENT_REPORT', '') ||
-        !Configuration::updateValue('DSNEWSLETTER_MAIL_ENCODE', 1) ||
+        !Configuration::updateValue('DSNEWSLETTER_SENT_REPORT', 1) ||
         !Configuration::updateGlobalValue('DSNEWSLETTER_PROGRESS', 1) ||
         !Configuration::updateValue('DSNEWSLETTER_ENCRYPT_ID', $key)) {
             $this->_errors[] = ('Error update value.');
@@ -168,10 +167,8 @@ class Dsnewsletter extends Module
         if (!Configuration::deleteByName('DSNEWSLETTER_SECURE_KEY') ||   // Set security key for ajax call
            !Configuration::deleteByName('DSNEWSLETTER_CRON_TIME') ||   // Cron time
            !Configuration::deleteByName('DSNEWSLETTER_TEST_EMAIL') ||   // test email
-           !Configuration::deleteByName('DSNEWSLETTER_EMAIL_NUMBER') ||
            !Configuration::deleteByName('DSNEWSLETTER_REPORT_EMAIL') ||
            !Configuration::deleteByName('DSNEWSLETTER_SENT_REPORT') ||
-           !Configuration::deleteByName('DSNEWSLETTER_MAIL_ENCODE') ||
            !Configuration::deleteByName('DSNEWSLETTER_PROGRESS') ||
            !Configuration::deleteByName('DSNEWSLETTER_ENCRYPT_ID')) {
             $this->_errors[] = ('Error update value.');
@@ -284,9 +281,11 @@ class Dsnewsletter extends Module
         if (!is_dir($dirPath)) {
             throw new InvalidArgumentException("$dirPath must be a directory");
         }
+
         if (Tools::substr($dirPath, Tools::strlen($dirPath) - 1, 1) != '/') {
             $dirPath .= '/';
         }
+
         $files = glob($dirPath . '*', GLOB_MARK);
         foreach ($files as $file) {
             if (is_dir($file)) {
@@ -298,6 +297,7 @@ class Dsnewsletter extends Module
                 }
             }
         }
+
         if ($deleteparent == true || $leaveIndex == false) {
             rmdir($dirPath);
         }
@@ -371,84 +371,11 @@ class Dsnewsletter extends Module
             }
         }
 
-        $newsletter->status += 1;
+        $newsletter->status = 1;
         $newsletter->date_sent = date('Y-m-d H:i:s');
-        $newsletter->failed += count($info['errors']);
-        $newsletter->sent_number += $info['total'];
+        $newsletter->failed = count($info['errors']);
+        $newsletter->sent_number = $info['total'];
         $newsletter->save();
-    }
-
-    /**
-    * cron task
-    */
-    public function cronTask()
-    {
-        if ($this->active) {
-            //All users from newsletter and queue
-            $users = null;
-
-            //get newsletters
-            $subscribers = DsnewsletterClass::getSubscribers(true);
-            //get queue
-            $queues = Db::getInstance()->executeS(
-                "SELECT id_lang, email, id_newsletter, id_customer, id_subscriber
-                FROM `"._DB_PREFIX_."dsqueue`
-                WHERE status = 0 AND publish = 1"
-            );
-            if ($queues) {
-                foreach ($queues as $queue) {
-                    $users[$queue['id_newsletter']][] = array(
-                        'email' => $queue['email'],
-                        'id_lang' => $queue['id_lang'],
-                        'tags' => $this->getTags(
-                            $queue['id_newsletter'],
-                            true,
-                            $queue['id_customer'],
-                            $queue['id_subscriber'],
-                            null,
-                            $queue['id_lang']
-                        )
-                    );
-                }
-            }
-
-            //get subscribers
-            if ($subscribers) {
-                foreach ($subscribers as $sub) {
-                    $users[$sub['id_newsletter']][] = array(
-                        'email' => $sub['email'],
-                        'id_lang' => $sub['id_lang'],
-                        'tags' => $this->getTags(
-                            $sub['id_newsletter'],
-                            true,
-                            $sub['id_customer'],
-                            $sub['id_subscriber'],
-                            $sub['dslist_id'],
-                            $sub['id_lang']
-                        )
-                    );
-                }
-            }
-
-            if ($users) {
-                $info = $this->sentCronEmails($users);
-                //UPDATE QUEUE STATUS AND DATE SENT
-                $date = date('Y-m-d H:i:s');
-                if (count($queues)) {
-                    Db::getInstance()->Execute(
-                        "UPDATE "._DB_PREFIX_."dsqueue SET status = 1, date_sent = '".pSQL($date) ."'"
-                    );
-                }
-
-                //CRON REPORT
-                if (Configuration::get('DSNEWSLETTER_SENT_REPORT') and $users) {
-                    $this->sentReport($info);
-                }
-            }
-        }
-
-        //update time
-        Configuration::updateValue('DSNEWSLETTER_CRON_TIME', date('Y-m-d H:i:s'));
     }
 
     /**
@@ -481,77 +408,6 @@ class Dsnewsletter extends Module
         } else {
             return null;
         }
-    }
-
-    public function sentCronEmails($users)
-    {
-        $result = null;
-
-        foreach ($users as $key => $new) {
-            $info = array(
-                'total' => null,
-                'correct' => null,
-                'errors' => array(),
-                'id' => null,
-                'name' => null
-            );
-
-            $attachments = null;
-            //create chunks
-            if ($number = Configuration::get('DSNEWSLETTER_EMAIL_NUMBER') and count($users)) {
-                $chunks = array_chunk($new, $number);
-            }
-
-            $newsletter = $this->getNewsletterObject($key);
-            $langs = explode(',', $newsletter->id_lang);
-
-            //attachments
-            if (isset($newsletter)) {
-                $attachments = Dsnewsletter::getAttachments($newsletter->id);
-            }
-
-            foreach ($chunks as $key => $chunk) {
-                $info['total'] += count($chunk);
-                foreach ($chunk as $key => $user) {
-                    set_time_limit(30);
-
-                    if (isset($user['id_lang']) and in_array($user['id_lang'], $langs)) {
-                        $id_lang = (int)$user['id_lang'];
-                    } else {
-                        $id_lang = Configuration::get('PS_LANG_DEFAULT');
-                    }
-
-                    if (Mail::Send(
-                        $id_lang,
-                        'newsletter-'.$newsletter->id,
-                        Mail::l($newsletter->name, $id_lang),
-                        $user['tags'],
-                        $user['email'],
-                        null,
-                        $newsletter->sender_email,
-                        $newsletter->sender_name,
-                        $attachments,
-                        null,
-                        dirname(__FILE__).'/mails/'
-                    )
-                    ) {
-                        $info['correct'] += 1;
-                    } else {
-                        $info['errors'][] =  $user['email'];
-                    }
-                }
-            }
-
-            //save newsletter data like date sent, status etc...
-            $this->saveNewsletterData($newsletter, $info);
-
-            $info['id'] = $newsletter->id;
-            $info['name'] = $newsletter->name;
-
-            $result[] = $info;
-        }
-
-        return $result;
     }
 
     public function sentReport($result)
@@ -617,14 +473,6 @@ class Dsnewsletter extends Module
             if (!Validate::isEmail(Tools::getValue('sender_email')) or Tools::getValue('sender_email') == '') {
                 $this->_errors[] = $this->l('Invalid or empty sender email.');
             }
-//            if (!Validate::isName(Tools::getValue('title_'.Configuration::get('PS_LANG_DEFAULT'))) or
-//                Tools::getValue('title_'.Configuration::get('PS_LANG_DEFAULT')) == '') {
-//                $this->_errors[] = $this->l('Invalid or empty name for default langguge.');
-//            }
-//            if (!Validate::isCleanHtml(Tools::getValue('template_'.Configuration::get('PS_LANG_DEFAULT'))) or
-//                Tools::getValue('template_'.Configuration::get('PS_LANG_DEFAULT')) == '') {
-//                $this->_errors[] = $this->l('Invalid or empty template for default langguge.');
-//            }
             if (Tools::getValue('id_lang[]')) {
                 $this->_errors[] = $this->l('Invalid or empty language.');
             }
@@ -632,14 +480,10 @@ class Dsnewsletter extends Module
             if (!Validate::isEmail(Tools::getValue('test_email')) or Tools::getValue('test_email') == '') {
                 $this->_errors[] = $this->l('Invalid or empty test email.');
             }
-            if (!Validate::isInt(Tools::getValue('email_number')) or Tools::getValue('email_number') == '') {
-                $this->_errors[] = $this->l('Invalid or empty email number.');
-            }
             if (!Validate::isEmail(Tools::getValue('report_email')) or Tools::getValue('report_email') == '') {
                 $this->_errors[] = $this->l('Invalid or empty report email.');
             }
         }
-
         //display errors
         if (count($this->_errors)) {
             foreach ($this->_errors as $err) {
@@ -653,7 +497,6 @@ class Dsnewsletter extends Module
 
     /**
      * method call when ajax request is made with the details row action
-     * @see AdminController::postProcess()
      */
     public function ajaxProcess()
     {
@@ -663,7 +506,7 @@ class Dsnewsletter extends Module
                 echo $this->displayTagsForm();
                 break;
             case 'defaultdsnewsletter':
-                $this->defaultdsnewsletter();
+                $this->sentNewsletter(Tools::getValue('id_dsnewsletter'));
                 break;
             case 'details':
                 $this->details();
@@ -694,7 +537,7 @@ class Dsnewsletter extends Module
     {
         $progress_current = Configuration::getGlobalValue('DSNEWSLETTER_PROGRESS');
         if(!$progress_current) {
-            echo '-1';
+            echo 0;
         }
         $progress = explode(',', $progress_current);
         echo (int)(($progress[0] * 100) / $progress[1]);
@@ -737,7 +580,15 @@ class Dsnewsletter extends Module
         } elseif (Tools::isSubmit('sent_test_template')) {
             $template = new DstemplateClass( Tools::getValue('id_dstemplate') );
             $this->sentTestEmail(TEMPLATE, $template, Tools::getValue('template_id_lang'));
-        } elseif (Tools::isSubmit('sent_test_newsletter')) {
+
+            $this->redirect( array(
+                'updatedstemplate' => 1,
+                'templates' => 1,
+                'id_dstemplate' => $template->id,
+                'template_id_lang' => Tools::getValue('template_id_lang'),
+                'sentTestConfirmation' => 1
+            ) );
+        } elseif (Tools::isSubmit('sent_test_newsletter') || Tools::isSubmit('sent_test_newsletter_list')) {
             $newsletter = new DsnewsletterClass( Tools::getValue('id_dsnewsletter') );
             $this->sentTestEmail(
                 NEWSLETTER,
@@ -746,8 +597,19 @@ class Dsnewsletter extends Module
                 true
             );
             //confirmation messages
+            if(Tools::isSubmit('sent_test_newsletter_list')) {
+                $this->redirect( array('newsletters' => 1, 'sentTestConfirmation' => 1) );
+            }
+            $this->redirect( array(
+                'updatedsnewsletter' => 1,
+                'newsletters' => 1,
+                'id_dsnewsletter' => $newsletter->id,
+                'sentTestConfirmation' => 1
+            ) );
         } elseif (Tools::isSubmit('addDslistConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('List saved successfully.'));
+        } elseif (Tools::isSubmit('deleteDslistConfirmation')) {
+            $this->html .= $this->displayConfirmation($this->l('List deleted successfully.'));
         } elseif (Tools::isSubmit('addDstemplateConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('Template saved successfully.'));
         } elseif (Tools::isSubmit('deleteDstemplateConfirmation')) {
@@ -770,14 +632,10 @@ class Dsnewsletter extends Module
             $this->html .= $this->displayConfirmation($this->l('Queue item/s deleted successfully.'));
         } elseif (Tools::isSubmit('updateSettingsConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('Settings was updated successfully.'));
-        } elseif (Tools::isSubmit('newsletterAddToListConfirmation')) {
-            $this->html .= $this->displayConfirmation($this->l('Subscriber/s added to list successfully.'));
         } elseif (Tools::isSubmit('customerAddToListConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('Customer/s added to list successfully.'));
         } elseif (Tools::isSubmit('customerRemoveFromListConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('Customer/s remove from list successfully.'));
-        } elseif (Tools::isSubmit('newsletterRemoveFromListConfirmation')) {
-            $this->html .= $this->displayConfirmation($this->l('Subscriber/s remove from list successfully.'));
         } elseif (Tools::isSubmit('sentTestTemplateConfirmation')) {
             $this->html .= $this->displayConfirmation($this->l('Test email was send successfully.'));
         } elseif (Tools::isSubmit('sentTestConfirmation')) {
@@ -901,7 +759,6 @@ class Dsnewsletter extends Module
         foreach ($languages as $k => $language) {
             $languages[$k]['is_default'] = (int)($language['id_lang'] == Configuration::get('PS_LANG_DEFAULT'));
         }
-
         $helper = new HelperForm();
         $helper->name_controller = 'dsnewsletter';
         $helper->identifier = $this->identifier;
@@ -970,7 +827,7 @@ class Dsnewsletter extends Module
                 ),
                 array(
                     'type' => 'select',
-                    'label' => $this->l('Gender'),
+                    'label' => $this->l('Filter by gender'),
                     'name' => 'gender',
                     'required' => false,
                     'class' => 'chosen',
@@ -991,11 +848,11 @@ class Dsnewsletter extends Module
                 array(
                     'type' => 'free',
                     'name' => 'age',
-                    'label' => $this->l('Age')
+                    'label' => $this->l('Filter by age')
                 ),
                 array(
                     'type' => 'select',
-                    'label' => $this->l('Customer language'),
+                    'label' => $this->l('Filter by language'),
                     'name' => 'lang_customer',
                     'default' => '0',
                     'class' => 'chosen',
@@ -1171,90 +1028,6 @@ class Dsnewsletter extends Module
     }
 
     /**
-    * Display Index Form
-    * @return string form
-    */
-    public function displayIndexForm()
-    {
-        $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/flot/jquery.flot.min.js');
-
-        //newsletters
-        $sql = 'SELECT sum(sent_number),sum(failed),sum(open), sum(click), sum(unsubscribe)
-                FROM `'._DB_PREFIX_.'dsnewsletter`
-                WHERE date_sent BETWEEN date_sub( now( ) , INTERVAL 1 MONTH ) AND now()
-                GROUP BY WEEK(date_sent)';
-        $news = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-
-        $this->html .= '<script type="text/javascript">';
-        $this->html .= ' $(function() {
-                            var sent_number = []; 
-                            var failed = []; 
-                            var open = []; 
-                            var click = [];
-                         ';
-
-        foreach ($news as $key => $new) {
-            $this->html .= 'sent_number.push(['.$key.', '. $new['sum(sent_number)'].']);';
-
-            $this->html .= 'failed.push(['.$key.', '. $new['sum(failed)'].']);';
-
-            $this->html .= 'open.push(['.$key.', '. $new['sum(open)'].']);';
-
-            $this->html .= 'click.push(['.$key.', '. $new['sum(click)'].']);';
-        }
-
-        $this->html .= '$.plot($("#dashboard-stats"), [
-                                {label: "Total sent", data: sent_number}, 
-                                {label: "Total faild", data: failed}, 
-                                {label: "Total open", data: open}, 
-                                {label: "Total click", data: click}],{
-                                       grid: {
-                                         backgroundColor: { colors: [ "#fff", "#EDF5FF" ] },
-                                         borderWidth: {
-                                             top: 1,
-                                             right: 1,
-                                             bottom: 2,
-                                             left: 2
-                                       }
-                                    } 
-                                }); 
-                         });
-                         </script>';
-
-        //customers
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.'customer`';
-        $customers =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-        //subscribers
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.$this->getNewsletterTableName().'`';
-        $subscribers =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-        //lists
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.'dslist`';
-        $lists =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-        //newsletters
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.'dsnewsletter` WHERE auto = 0';
-        $newsletters =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-        //automatic
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.'dsnewsletter` WHERE auto = 1';
-        $automatic =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-        //queue
-        $sql = 'SELECT COUNT(*) as total FROM `'._DB_PREFIX_.'dsqueue`';
-        $queue =  Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
-
-        $this->smarty->assign(array(
-            'currentIndex' => AdminController::$currentIndex.'&configure='.$this->name.
-                '&token='.Tools::getAdminTokenLite('AdminModules'),
-            'customers' => $customers[0]['total'],
-            'subscribers' => $subscribers[0]['total'],
-            'lists' => $lists[0]['total'],
-            'newsletters' => $newsletters[0]['total'],
-            'automatic' => $automatic[0]['total'],
-            'queue' => $queue[0]['total']
-        ));
-
-        $this->html .= $this->display(__FILE__, '/views/templates/admin/panel.tpl');
-    }
-
-    /**
      * Display Support Form
      * @return string form
      */
@@ -1357,29 +1130,22 @@ class Dsnewsletter extends Module
     public function getMailFiles($id, $type, $template_id_lang = null, $show_tag_click = false, $show_tag_track = false)
     {
         $mails = array();
+
         if(!$template_id_lang) {
             $template_id_lang = Configuration::get('PS_LANG_DEFAULT');
         }
         $iso_code = Language::getIsoById($template_id_lang);
-        $content = $this->fileGetContent(
+        $mails['content'] = $this->fileGetContent(
             $this->getMailFilePath($type, $iso_code, $id, FILETYPE_HTML)
         );
-        $plaintext = $this->fileGetContent(
+        $mails['plaintext'] = $this->fileGetContent(
             $this->getMailFilePath($type, $iso_code, $id, FILETYPE_TXT)
         );
-
-        //remove tracking image
-        if(isset($matches[1])) {
-            if(!$show_tag_track) {
-                $content = str_replace(TAG_TRACK, '', $matches[1]);
-            }
-            if(!$show_tag_click) {
-                $content = str_replace(TAG_CLICK, '', $matches[1]);
-            }
+        if($type === TEMPLATE) {
+            $mails['design'] = $this->fileGetContent(
+                $this->getMailFilePath(DESIGN, $iso_code, $id, FILETYPE_JSON)
+            );
         }
-
-        $mails['plaintext'] = $plaintext;
-        $mails['content'] = $content;
 
         return $mails;
     }
@@ -1498,6 +1264,7 @@ class Dsnewsletter extends Module
                         'href' => $current_index.'&configure='.$this->name.'&token='.$token.
                             '&sent_test_template=1&id_dstemplate='.$id_template,
                         'class' => 'pull-right',
+                        'icon' => 'process-icon-envelope',
                     ),
                 )
             )
@@ -1507,8 +1274,8 @@ class Dsnewsletter extends Module
 
         if (Tools::getValue('design')) {
             $helper->fields_value['design'] = Tools::getValue('design');
-        } elseif (isset($template->design)) {
-            $helper->fields_value['design'] = $template->design[$template_id_lang];
+        } elseif (isset($files['design'])) {
+            $helper->fields_value['design'] = $files['design'];
         } else {
             $helper->fields_value['design'] = '';
         }
@@ -1525,7 +1292,7 @@ class Dsnewsletter extends Module
         $this->context->smarty->assign(array(
             'html_content_with_tags' => $this->addTagsToContentForDesign($files['content']),
             'text_content' => $files['plaintext'],
-            'tags' => Tags::$tags_label,
+            'tags' => Tags::getTagsLabelsWithoutTrack(),
             'placeholder' => self::getProductImagePlaceholder(),
             'mail_name' => 'test',
         ));
@@ -1609,14 +1376,6 @@ class Dsnewsletter extends Module
                     'hint' => $this->l('This is email adress for testing templates.')
                 ),
                 array(
-                    'type' => 'text',
-                    'label' => $this->l('Email number'),
-                    'required' => true,
-                    'name' => 'email_number',
-                    'size' => 55,
-                    'desc' => $this->l('Email number sent at one time.')
-                ),
-                array(
                     'type' => 'switch',
                     'label' => $this->l('Sent report'),
                     'name' => 'sent_report',
@@ -1639,27 +1398,6 @@ class Dsnewsletter extends Module
                     'label' => $this->l('Report email'),
                     'name' => 'report_email',
                 ),
-                 array(
-                    'type' => 'select',
-                    'label' => $this->l('Email encode:'),
-                    'name' => 'mail_encode',
-                    'required' => false,
-                    'class' => 't',
-                    'options' => array(
-                        'query' => array(
-                            array(
-                                'value' => 1,
-                                'label' => $this->l('UTF-8')
-                            ),
-                            array(
-                                'value' => 0,
-                                'label' => $this->l('ISO-8859-2')
-                            )
-                        ),
-                        'id' => 'value',
-                        'name' => 'label',
-                    ),
-                )
             ),
             'submit' => array(
                 'name' => 'submitUpdateSettings',
@@ -1676,8 +1414,6 @@ class Dsnewsletter extends Module
             'cron',
             array('token' => (string)Configuration::get('DSNEWSLETTER_SECURE_KEY'))
         );
-        /* Number sent at one time */
-        $helper->fields_value['email_number'] = Configuration::get('DSNEWSLETTER_EMAIL_NUMBER');
         /* Number report email string */
         $helper->fields_value['report_email'] = Configuration::get('DSNEWSLETTER_REPORT_EMAIL');
         /* Number sent report bool */
@@ -1701,14 +1437,14 @@ class Dsnewsletter extends Module
     {
         $newsletter = null;
         $this->context->controller->addJqueryUi('ui.datepicker');
-        $this->context->controller->addJqueryUi('ui.slider');
-        $this->context->controller->addJqueryUi('ui.accordion');
-        $this->context->controller->addJqueryUi('effects.fade');
+        $this->context->controller->addJqueryUi('ui.tabs');
+        $this->context->controller->addJqueryUi('ui.core');
+        $this->context->controller->addJqueryUi('ui.button');
+        $this->context->controller->addJqueryUi('ui.effect');
         $this->context->controller->addJS(_PS_JS_DIR_.'jquery/plugins/timepicker/jquery-ui-timepicker-addon.js');
         $this->context->controller->addCSS(
             _PS_JS_DIR_.'jquery/plugins/timepicker/jquery-ui-timepicker-addon.css'
         );
-        $this->context->controller->addJS(_PS_JS_DIR_.'date.js');
 
         $helper = new HelperForm();
         $helper->module = $this;
@@ -1730,8 +1466,9 @@ class Dsnewsletter extends Module
                 array('updatedsnewsletter' => 1 ,'id_dsnewsletter' => $id_newsletter)
             );
         }
-
+        $frequency = new Frequency();
         $helper->submit_action = 'submitAddDsnewsletter';
+
         $this->fields_form[0]['form'] = array(
             'tinymce' => true,
             'legend' => array(
@@ -1740,7 +1477,7 @@ class Dsnewsletter extends Module
             'tabs' => array(
                 'general' => $this->l('General'),
                 'attachment' => $this->l('Attachment'),
-                'start' => $this->l('Duration'),
+                'cron' => $this->l('Duration'),
             ),
             'input' => array(
                 array(
@@ -1826,27 +1563,93 @@ class Dsnewsletter extends Module
                     )
                 ),
                 array(
-                    'type' => 'select',
-                    'label' => $this->l('Frequency:'),
-                    'name' => 'frequency',
-                    'tab' => 'start',
-                    'class' => 'chosen',
-                    'default_value' => 'none',
-                    'options' => array(
-                        'query' => Frequency::getForSelect(),
-                        'id' => 'id',
-                        'name' => 'name'
-                    )
+                    'type' => 'switch',
+                    'label' => $this->l('Active'),
+                    'name' => 'active',
+                    'class' => 't',
+                    'is_bool' => true,
+                    'tab' => 'general',
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
                 ),
                 array(
-                    'type' => 'date',
-                    'label' => $this->l('Date start send'),
-                    'required' => true,
-                    'name' => 'date_planned',
-                    'class' => 'timepicker',
-                    'tab' => 'start',
-                    'size' => 55,
-                    'hint' => $this->l('Please select date when you plan to sent newsletters.')
+                    'type' => 'switch',
+                    'label' => $this->l('Cron'),
+                    'name' => 'cron',
+                    'class' => 't',
+                    'is_bool' => true,
+                    'id' => 'is_cron',
+                    'tab' => 'cron',
+                    'values' => array(
+                        array(
+                            'id' => 'cron_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'cron_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Hour'),
+                    'name' => 'cron_hour',
+                    'tab' => 'cron',
+                    'class' => 'chosen',
+                    'options' => array(
+                        'query' => $frequency->getCronHour(),
+                        'id' => 'value',
+                        'name' => 'name',
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Day'),
+                    'name' => 'cron_day',
+                    'tab' => 'cron',
+                    'class' => 'chosen',
+                    'options' => array(
+                        'query' => $frequency->getCronDay(),
+                        'id' => 'value',
+                        'name' => 'name',
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Week'),
+                    'name' => 'cron_week',
+                    'tab' => 'cron',
+                    'class' => 'chosen',
+                    'options' => array(
+                        'query' => $frequency->getCronWeek(),
+                        'id' => 'value',
+                        'name' => 'name',
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Month'),
+                    'name' => 'cron_month',
+                    'tab' => 'cron',
+                    'class' => 'chosen',
+                    'options' => array(
+                        'query' => $frequency->getCronMonth(),
+                        'id' => 'value',
+                        'name' => 'name',
+                    ),
                 )
             ),
             'submit' => array(
@@ -1856,7 +1659,7 @@ class Dsnewsletter extends Module
             'buttons' => array(
                 'cancelBlock' => array(
                     'title' => $this->l('Cancel'),
-                    'href' => $this->getAdminUrl().'&newsletter=1',
+                    'href' => $this->getAdminUrl().'&newsletters=1',
                     'icon' => 'process-icon-cancel'
                 ),
                 'save-and-stay' => array(
@@ -1887,9 +1690,17 @@ class Dsnewsletter extends Module
         $this->getFieldsValue($helper, $newsletter, 'sender_email', false, '');
         $this->getFieldsValue($helper, $newsletter, 'frequency');
         $this->getFieldsValue($helper, $newsletter, 'id_list');
+        $this->getFieldsValue($helper, $newsletter, 'active', false, 1);
         $this->getFieldsValue($helper, $newsletter, 'newsletter_id_lang');
         $this->getFieldsValue($helper, $newsletter, 'id_lang', true);
         $this->getFieldsValue($helper, $newsletter, 'id_template');
+
+        $this->getFieldsValue($helper, $newsletter, 'cron_hour', false, '*');
+        $this->getFieldsValue($helper, $newsletter, 'cron_day', false, '*');
+        $this->getFieldsValue($helper, $newsletter, 'cron_month', false, '*');
+        $this->getFieldsValue($helper, $newsletter, 'cron_week', false, '*');
+
+        $this->getFieldsValue($helper, $newsletter, 'cron');
 
         if ($attachment = Tools::getValue('attachment')) {
             $helper->fields_value['attachment'] = $attachment;
@@ -1975,6 +1786,12 @@ class Dsnewsletter extends Module
         $helper->identifier = 'id_dstemplate';
         $helper->actions = array('duplicate', 'delete');
         $helper->imageType = 'jpg';
+        $helper->toolbar_btn['new'] =  array(
+            'href' => AdminController::$currentIndex.'&configure='.$this->name.
+                '&adddstemplate&template_id_lang=' . Configuration::get('PS_LANG_DEFAULT') .
+                '&token='.Tools::getAdminTokenLite('AdminModules'),
+            'desc' => $this->l('Add new')
+        );
         $helper->listTotal = count($templates);
         $helper->title = 'Templates Manager';
         $helper->table = 'dstemplate';
@@ -2016,19 +1833,23 @@ class Dsnewsletter extends Module
                 'orderby' => false,
                 'search' => false
             ),
-            'date_planned' => array(
-                'title' => $this->l('Date Planned'),
-                'width' => 100,
+            'cron' => array(
+                'title' => $this->l('Cron'),
+                'width' => 50,
+                'active' => 'status',
                 'orderby' => false,
                 'search' => false
             ),
-            'frequency' => array(
-                'title' => $this->l('Frequency'),
+            'active' => array(
+                'title' => $this->l('Active'),
                 'width' => 50,
+                'active' => 'status',
                 'orderby' => false,
                 'search' => false
             ),
         );
+
+        $this->context->controller->addJqueryUI('ui.progressbar');
 
         $news = DsnewsletterClass::getAll();
         $newsletters = DsnewsletterClass::getNewsletters($news);
@@ -2038,7 +1859,7 @@ class Dsnewsletter extends Module
         $helper->show_toolbar = true;
         $helper->shopLinkType = '';
         $helper->identifier = 'id_dsnewsletter';
-        $helper->actions = array('edit', 'delete', 'default');
+        $helper->actions = array('edit', 'delete', 'default', 'view');
         $helper->listTotal = count($newsletters);
         $helper->imageType = 'jpg';
         $helper->toolbar_btn['new'] =  array(
@@ -2051,7 +1872,12 @@ class Dsnewsletter extends Module
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name.'&newsletters=1';
 
-        return $helper->generateList($newsletters, $this->fields_list);
+        return $this->getPrograssBar() . $helper->generateList($newsletters, $this->fields_list);
+    }
+
+    private function getPrograssBar()
+    {
+        return $this->display(__FILE__, '/views/templates/admin/progress.tpl');
     }
 
     /**
@@ -2060,8 +1886,7 @@ class Dsnewsletter extends Module
     */
     public function displayStatisticsForm()
     {
-        $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/flot/jquery.flot.min.js');
-        $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/flot/jquery.flot.categories.js');
+        $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/statistics-min.js');
 
         $this->fields_list = array(
             'news_name' => array('title' => $this->l('Name'), 'width' => 25),
@@ -2195,17 +2020,20 @@ class Dsnewsletter extends Module
         Configuration::updateGlobalValue('DSNEWSLETTER_PROGRESS', '');
     }
 
-    private function defaultdsnewsletter()
+    public function sentNewsletter($id_newsletter)
     {
-        $email_correct = null;
-        $email_errors = null;
-        $email_attachments = null;
+        $email_correct = array();
+        $email_errors = array();
         $emails = array();
+        //create next stats
+        $stats = new DsstatsClass();
+        $stats->id_news = $id_newsletter;
+        $stats->save();
 
         $this->cleanProgress();
         session_write_close(); // close the session
         //get all subscribers
-        $newsletter = new DsnewsletterClass(Tools::getValue('id_dsnewsletter'));
+        $newsletter = new DsnewsletterClass($id_newsletter);
         $list = new DslistClass($newsletter->id_list);
         $customers = $this->getCustomers($list);
         $news = $this->getNews($list);
@@ -2217,27 +2045,12 @@ class Dsnewsletter extends Module
             $emails[$id_lang] = $this->getMailFiles($newsletter->id, NEWSLETTER, $id_lang, true, true);
         }
 
-        if ($newsletter->id) {
-            //get attachment names
-            $dirname = _PS_ROOT_DIR_ . '/modules/dsnewsletter/upload/attachments/' . $newsletter->id;
-            if (is_dir($dirname)) {
-                $images = scandir($dirname);
-                $ignore = array(".", "..");
-
-                foreach ($images as $key => $curimg) {
-                    if (!in_array($curimg, $ignore)) {
-                        $email_attachments[$key]['content'] = Tools::file_get_contents($dirname . '/' . $curimg);
-                        $email_attachments[$key]['name'] = pathinfo($dirname . '/' . $curimg, PATHINFO_FILENAME);
-                        $email_attachments[$key]['mime'] = pathinfo($dirname . '/' . $curimg, PATHINFO_EXTENSION);
-                    }
-                }
-            }
-        }
+        $email_attachments = $this->getAttachments($newsletter->id);
 
         if ($subscribers) {
             foreach ($subscribers as $subscriber) {
                 set_time_limit(30);
-
+                // check if customer id_lang is in chosen languages otherwise sent in default
                 if (isset($subscriber['id_lang']) and in_array($subscriber['id_lang'], $newsletter_languages)) {
                     $id_lang = (int) $subscriber['id_lang'];
                 } else {
@@ -2253,9 +2066,9 @@ class Dsnewsletter extends Module
                     $first_name,
                     $last_name,
                     $newsletter->id,
-                    $subscriber['id_customer'],
-                    $subscriber['id_subscriber'],
-                    true,
+                    (isset($subscriber['id_customer']) ?: 0), // have to be 0
+                    (isset($subscriber['id']) ?: 0), // have to be 0
+                    $stats->id,
                     true
                 );
                 $tags = $tags->getAllWithValue();
@@ -2281,22 +2094,35 @@ class Dsnewsletter extends Module
             }
         }
 
-        $this->addStatistics($newsletter, $email_correct, $email_errors);
-        $this->smarty->assign(array(
+        $this->addStatistics($stats->id, $newsletter, $email_correct, $email_errors);
+
+        $report = array(
             'id'      => $newsletter->id,
             'name'    => $newsletter->name,
             'total'   => count($subscribers),
             'correct' => count($email_correct),
             'error'   => count($email_errors),
             'errors'  => $email_errors
-        ));
+        );
 
+        //CRON REPORT
+        if (Configuration::get('DSNEWSLETTER_SENT_REPORT')) {
+            $this->sentReport($report);
+        }
+
+        $this->smarty->assign($report);
         echo $this->display(__FILE__, '/views/templates/admin/report.tpl');
     }
 
     private function sentTestEmail($type, $object, $id_lang, $click_wrapper = false)
     {
         $emails = $this->getMailFiles($object->id, $type, $id_lang, $click_wrapper);
+
+        $email_attachments = array();
+        if($type === NEWSLETTER) {
+            $email_attachments = $this->getAttachments($object->id);
+        }
+
         $tags = new Tags(
             $emails['content'],
             $id_lang,
@@ -2316,21 +2142,12 @@ class Dsnewsletter extends Module
             null,
             null,
             null,
-            null,
+            $email_attachments,
             null,
             dirname(__FILE__) . '/mails/'
         )) {
             $this->_errors[] = $this->l('There was a problem sending test template.');
         }
-
-        $type = strtolower($type);
-        $this->redirect( array(
-            'updateds' . $type => 1,
-            $type . 's' => 1,
-            'id_ds' . $type => $object->id,
-            'template_id_lang' => $id_lang,
-            'sentTestConfirmation' => 1
-        ) );
     }
 
     /**
@@ -2582,34 +2399,45 @@ class Dsnewsletter extends Module
     {
         $template = new DstemplateClass(Tools::getValue('id_dstemplate'));
         $template->name = Tools::getValue('name');
-        $template->design = Tools::getValue('design');
         $template->save();
 
         $this->addTemplateImage($template->id);
-        $iso_code = LanguageCore::getIsoById(1);
+        $iso_code = LanguageCore::getIsoById(1); // @todo save selected languages
 
+        /* save design  */
+        $this->filePutContent(
+            $this->getMailFilePath(DESIGN, $iso_code, $template->id, FILETYPE_JSON),
+            Tools::getValue('design')
+        );
+
+        /* save html */
         if (!$this->saveHtmlToFile(
             Tools::getValue('html'),
             $this->getMailFilePath(TEMPLATE, $iso_code, $template->id, FILETYPE_HTML)
         )) {
             $this->_errors[] = $this->l('Error save template file');
         }
-        if (!file_put_contents(
+
+        /* save text */
+        if (!$this->filePutContent(
             $this->getMailFilePath(TEMPLATE, $iso_code, $template->id, FILETYPE_TXT),
             Tools::getValue('plaintext')
         )) {
             $this->_errors[] = $this->l('Error save text version');
         }
 
-        $redirect = 'templates=1&addDstemplateConfirmation';
+        $redirect = array('templates' => 1, 'addDstemplateConfirmation' => 1);
+
         if (Tools::isSubmit('submitAddTemplateAndStay')) {
-            $redirect = 'updatedstemplate=1&id_dstemplate=' . $template->id . '&addDstemplateConfirmation&'.
-            'template_id_lang=' . Tools::getValue('template_id_lang');
+            $redirect = array(
+                'updatedstemplate' => 1,
+                'id_dstemplate' => $template->id,
+                'addDstemplateConfirmation' => 1,
+                'template_id_lang' => Tools::getValue('template_id_lang')
+            );
         }
 
-        $module_url = AdminController::$currentIndex . '&configure=' . $this->name .
-            '&token=' . Tools::getAdminTokenLite('AdminModules') . '&';
-        Tools::redirectAdmin($module_url . $redirect);
+        $this->redirect($redirect);
     }
 
     /**
@@ -2619,9 +2447,9 @@ class Dsnewsletter extends Module
      * @return void
      * @throws PrestaShopException
      */
-    private function addStatistics($newsletter, $email_correct, $email_errors)
+    private function addStatistics($id_stats, $newsletter, $email_correct, $email_errors)
     {
-        $stats = new DsstatsClass();
+        $stats = new DsstatsClass($id_stats);
         $stats->id_news = $newsletter->id;
         $stats->date_sent = date('Y-m-d H:i:s');
         $stats->sent_number = ($email_correct ? count($email_correct) : 0);
@@ -2632,34 +2460,33 @@ class Dsnewsletter extends Module
     public function getCustomers($list)
     {
         $ids = null;
-        if($list->target_customer === TargetCustomer::NONE) {
+        if((int)$list->target_customer === TargetCustomer::NONE) {
             return null;
         }
-        if($list->target_customer === TargetCustomer::SELECTED_CUSTOMERS && $list->selected_customer &&
-            !is_array($list->selected_customer)) {
+        if((int)$list->target_customer === TargetCustomer::SELECTED_CUSTOMERS && $list->selected_customer) {
             $ids = explode(',', $list->selected_customer);
         }
         $sql = 'SELECT c.id_customer, c.email FROM `' . _DB_PREFIX_ . 'customer` as c';
-        if($list->target_customer === TargetCustomer::CUSTOMERS_WITH_ORDER) {
+        if((int)$list->target_customer === TargetCustomer::CUSTOMERS_WITH_ORDER) {
             $sql .= ' INNER JOIN ' . _DB_PREFIX_ . 'orders AS o ON (c.id_customer = o.id_customer)';
         }
-        if($list->target_customer === TargetCustomer::CUSTOMERS_WITH_CART) {
+        if((int)$list->target_customer === TargetCustomer::CUSTOMERS_WITH_CART) {
             $sql .= ' INNER JOIN ' . _DB_PREFIX_ . 'cart AS ca ON (c.id_customer = ca.id_customer)';
         }
-        if($list->target_customer === TargetCustomer::CUSTOMERS_WITH_ABANDONED_CART) {
+        if((int)$list->target_customer === TargetCustomer::CUSTOMERS_WITH_ABANDONED_CART) {
             $sql .= ' INNER JOIN ' . _DB_PREFIX_ . 'cart AS ca ON (c.id_customer = ca.id_customer)';
         }
         $sql .= ' WHERE 1';
-        if($list->target_customer === TargetCustomer::CUSTOMERS_WITH_ABANDONED_CART) {
+        if((int)$list->target_customer === TargetCustomer::CUSTOMERS_WITH_ABANDONED_CART) {
             $sql .= ' AND ca.`date_add` BETWEEN DATE_SUB(DATE(NOW()), INTERVAL ' . (int)$list->ab_day . ' DAY)' .
                 ' AND DATE_SUB(NOW(), INTERVAL ' . (int)$list->ab_hour . ' HOUR)' .
                 ' AND NOT EXISTS (SELECT id_order FROM `' . _DB_PREFIX_ . 'orders`' .
 		        ' WHERE `' . _DB_PREFIX_ . 'orders`.id_cart = ca.id_cart)';
         }
-        if($list->target_customer === TargetCustomer::SELECTED_CUSTOMERS && !empty($ids)) {
+        if((int)$list->target_customer === TargetCustomer::SELECTED_CUSTOMERS && !empty($ids)) {
             $sql .= ' AND c.id_customer IN ("' . implode('","', $ids) . '")';
         }
-        $sql .= ($list->target_customer === TargetCustomer::NEWSLETTER_SUBSCRIBERS ? ' AND c.newsletter = 1' : '');
+        $sql .= ((int)$list->target_customer === TargetCustomer::NEWSLETTER_SUBSCRIBERS ? ' AND c.newsletter = 1' : '');
         if($list->target_customer === TargetCustomer::CUSTOMERS_GROUPS) {
             $sql .= ' AND c.id_default_group = ' . (int)$list->group;
         }
@@ -2687,7 +2514,9 @@ class Dsnewsletter extends Module
 
     public function getCustomersByIds($ids)
     {
-        if(!$ids) { return; }
+        if (!$ids) {
+            return;
+        }
         $list = new DslistClass();
         $list->selected_news = $ids;
         return $this->getCustomers($list);
@@ -2735,7 +2564,7 @@ class Dsnewsletter extends Module
     /**
      * @return string
      */
-    private function getNewsletterTableName(): string
+    private function getNewsletterTableName()
     {
         $tableName = 'newsletter';
         if (version_compare(_PS_VERSION_, '1.7.0', '>=') === true) {
@@ -2757,13 +2586,12 @@ class Dsnewsletter extends Module
     /**
      * @return void
      */
-    private function updateSettings(): void
+    private function updateSettings()
     {
         Configuration::updateValue('DSNEWSLETTER_TEST_EMAIL', (string)Tools::getValue("test_email"));
         Configuration::updateValue('DSNEWSLETTER_EMAIL_NUMBER', (string)Tools::getValue("email_number"));
         Configuration::updateValue('DSNEWSLETTER_REPORT_EMAIL', (string)Tools::getValue("report_email"));
         Configuration::updateValue('DSNEWSLETTER_SENT_REPORT', (string)Tools::getValue("sent_report"));
-        Configuration::updateValue('DSNEWSLETTER_MAIL_ENCODE', (string)Tools::getValue("mail_encode"));
 
         $this->redirect(array('settings' => 1, 'updateSettingsConfirmation' => 1));
     }
@@ -2786,10 +2614,6 @@ class Dsnewsletter extends Module
         return $params;
     }
 
-    /**
-     * @param $file
-     * @return void
-     */
     private function deleteAttachment($file, $id_newsletter)
     {
         $url = $this->getAttachmentPath($id_newsletter) . '/' . $file;
@@ -2809,10 +2633,6 @@ class Dsnewsletter extends Module
         return dirname(__FILE__) . '/upload/attachments/' . $id_newsletter;
     }
 
-    /**
-     * @param $file
-     * @return void
-     */
     private function deleteImageTemplate($file, $id_template, $iso_code)
     {
         $image = $this->getTemplateImagePath($id_template, $iso_code) . '/' . $file;
@@ -2838,6 +2658,8 @@ class Dsnewsletter extends Module
             $list = new DslistClass($id_list);
             $list->delete();
         }
+
+        $this->redirect(array('lists' => 1, 'deleteDslistConfirmation' => 1));
     }
 
     private function submitAddList()
@@ -2962,12 +2784,18 @@ class Dsnewsletter extends Module
         $newsletter = new DsnewsletterClass($id_newsletter);
         $newsletter->name = Tools::getValue('name');
         $newsletter->id_template = Tools::getValue('id_template');
-        $newsletter->date_planned = Tools::getValue('date_planned');
         $newsletter->id_lang = $this->implode(Tools::getValue('id_lang'));
         $newsletter->id_list = Tools::getValue('id_list');
         $newsletter->sender_name = (string)Tools::getValue('sender_name');
         $newsletter->sender_email = (string)Tools::getValue('sender_email');
-        $newsletter->frequency = (int)$frequency;
+
+        $newsletter->cron_hour = (string)Tools::getValue('cron_hour');
+        $newsletter->cron_day = (string)Tools::getValue('cron_day');
+        $newsletter->cron_month = (string)Tools::getValue('cron_month');
+        $newsletter->cron_week = (string)Tools::getValue('cron_week');
+
+        $newsletter->cron = (bool)Tools::getValue('cron');
+        $newsletter->active = (bool)Tools::getValue('active');
 
         if ($this->isNotOneTimeOrManual($frequency)) {
             $date_planned = Tools::getValue('date_planned');
@@ -2980,8 +2808,7 @@ class Dsnewsletter extends Module
 
         $languages = Language::getLanguages(false);
         foreach ($languages as $language) {
-            $iso_code = $language['iso_code'];
-            $this->saveNewsletterFiles($iso_code, $newsletter);
+            $this->saveNewsletterFiles($language['iso_code'], $newsletter);
         }
         $this->uploadAttachment($newsletter);
 
@@ -3051,20 +2878,19 @@ class Dsnewsletter extends Module
     {
         $html = $this->getMailFilePath(NEWSLETTER, $iso_code, $newsletter->id, FILETYPE_HTML);
         $text = $this->getMailFilePath(NEWSLETTER, $iso_code, $newsletter->id, FILETYPE_TXT);
-        if (!file_exists($html)) {
-            copy(
-                $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_HTML),
-                $html
-            );
-            copy(
-                $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_TXT),
-                $text
-            );
+        if (file_exists($html)) {
+            return;
         }
+        $html_template = file_get_contents(
+            $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_HTML)
+        );
+        $text_template = file_get_contents(
+            $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_TXT)
+        );
         //save text version
-        file_put_contents($text, Tags::addWrapperTagToPlainTextLinks(Tools::getValue('plaintext')));
+        file_put_contents($text, Tags::addWrapperTagToPlainTextLinks($text_template));
         //save html version
-        if (!$this->saveHtmlToFile(Tags::addWrapperTagToLinks(Tools::getValue('template')), $html)) {
+        if (!$this->saveHtmlToFile(Tags::addWrapperTagToLinks($html_template), $html)) {
             $this->_errors[] = $this->l('error save html version');
         }
     }

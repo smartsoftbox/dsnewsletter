@@ -5,7 +5,7 @@
 *  International Registered Trademark & Property of Smart Soft
 *}
 
-<ul class="nav nav-pills">
+<ul id="my-nav-pills" class="nav nav-pills">
     <li class="active"><a href="#editor" data-toggle="tab">Edit HTML version</a></li>
     <li><a href="#tags-tab" data-toggle="tab">Tags</a></li>
     <li><a href="#view-html" data-toggle="tab">View HTML version</a></li>

@@ -5,6 +5,6 @@
 *  International Registered Trademark & Property of Smart Soft
 *}
 
-<a href="{$href|escape:'html':'UTF-8'}&action=defaultdsnewsletter" title="sent now" name="sent now" class="sent">
-	<i class="icon-gear"></i> Sent now
+<a href="{$href|escape:'html':'UTF-8'}&sent_test_newsletter_list=1" title="sent test" name="sent_test" >
+	<i class="icon-envelope"></i> Sent test
 </a>

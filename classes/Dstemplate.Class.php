@@ -12,8 +12,6 @@ class DstemplateClass extends ObjectModel
 {
     public $id;
     public $name;
-    public $design;
-    public $html;
 
     public static $default_templates = array (
         array('name' => 'New Products', 'id' => 1),
@@ -25,18 +23,14 @@ class DstemplateClass extends ObjectModel
     public static $definition = array(
         'table' => 'dstemplate',
         'primary' => 'id_dstemplate',
-        'multilang' => true,
         'fields' => array(
             'name' =>                 array('type' => self::TYPE_STRING, 'validate' => 'isString'),
-            'design' =>               array('type' => self::TYPE_STRING, 'validate' => 'isString', 'lang' => true),
-            'html' =>                 array('type' => self::TYPE_STRING, 'validate' => 'isString', 'lang' => true),
         )
     );
   
     public static function deleteTable()
     {
-        Db::getInstance()->Execute('DROP TABLE IF EXISTS '._DB_PREFIX_.'dstemplate');
-        return Db::getInstance()->Execute('DROP TABLE IF EXISTS '._DB_PREFIX_.'dstemplate_lang');
+        return Db::getInstance()->Execute('DROP TABLE IF EXISTS '._DB_PREFIX_.'dstemplate');
     }
     
     public function copyFromPost()
@@ -74,16 +68,14 @@ class DstemplateClass extends ObjectModel
             return false;
         }
 
-        if (!Db::getInstance()->Execute('
-            CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'dstemplate_lang` (
-            `id_dstemplate` int(10) unsigned NOT NULL,
-            `id_lang` int(10) unsigned NOT NULL,
-            `design` TEXT,           
-            `html` TEXT,           
-            PRIMARY KEY (`id_dstemplate`, `id_lang`))
-            ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8')) {
-            return false;
-        }
+//        if (!Db::getInstance()->Execute('
+//            CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'dstemplate_lang` (
+//            `id_dstemplate` int(10) unsigned NOT NULL,
+//            `id_lang` int(10) unsigned NOT NULL,
+//            PRIMARY KEY (`id_dstemplate`, `id_lang`))
+//            ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8')) {
+//            return false;
+//        }
 
         return true;
     }

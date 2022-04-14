@@ -70,10 +70,10 @@ class DslistClass extends ObjectModel
                                           `id_lang` varchar(255) NOT NULL,          
                                           `groups` varchar(255) NOT NULL,          
                                           `target_customer` int(10) unsigned NOT NULL,
-                                          `selected_customer` varchar(255) NOT NULL,          
+                                          `selected_customer` TEXT NOT NULL,          
                                           `gender` int(10) unsigned NOT NULL,
                                           `target_news` int(10) unsigned NOT NULL,
-                                          `selected_news` varchar(255) NOT NULL,          
+                                          `selected_news` TEXT NOT NULL,          
                                           `age_compare` int(10) unsigned NOT NULL,
                                           `age_value` int(10) unsigned NOT NULL,
                                           `lang_customer` varchar(255) NOT NULL,          
@@ -121,13 +121,13 @@ class DslistClass extends ObjectModel
         $fields['color'] = (string)($this->color);
         $fields['id_lang'] = (string)($this->id_lang);
         $fields['groups'] = (string)($this->groups);
-        $fields['target_customer'] = (string)($this->target_customer);
+        $fields['target_customer'] = (int)($this->target_customer);
         $fields['selected_customer'] = (string)$this->selected_customer;
         $fields['gender'] = (int)$this->gender;
         $fields['age_compare'] = (int)$this->age_compare;
         $fields['age_value'] = (int)$this->age_value;
         $fields['lang_customer'] = (string)$this->lang_customer;
-        $fields['target_news'] = (string)($this->target_news);
+        $fields['target_news'] = (int)($this->target_news);
         $fields['selected_news'] = (string)$this->selected_news;
         $fields['ab_day'] = (int)($this->ab_day);
         $fields['ab_hour'] = (int)($this->ab_hour);

@@ -4,33 +4,32 @@
 *  @license    Commercial license
 *  International Registered Trademark & Property of Smart Soft
 *}
-{foreach from=$result item=info}
   <tr class="row_hover">
     <td align="left" style="border-right: 1px solid #FFFFFF;border-bottom: 1px solid #FFFFFF;
                               background-color: rgb(248, 246, 234); padding: 0.4em 0.4em;">
-        {$info.id|intval}
+        {$result.id|intval}
     </td>
     <td align="left" style="border-right: 1px solid #FFFFFF;border-bottom: 1px solid #FFFFFF;
                               background-color: rgb(248, 246, 234); padding: 0.4em 0.4em;">
-      {$info.name|escape:'htmlall':'UTF-8'}
+      {$result.name|escape:'htmlall':'UTF-8'}
     </td>
     <td align="left" style="border-right: 1px solid #FFFFFF;border-bottom: 1px solid #FFFFFF;
                               background-color: rgb(248, 246, 234); padding: 0.4em 0.4em;">
-      {$info.total|intval}
+      {$result.total|intval}
     </td>
     <td align="left" style="border-right: 1px solid #FFFFFF;border-bottom: 1px solid #FFFFFF;
                               background-color: rgb(248, 246, 234); padding: 0.4em 0.4em;">
-      {$info.correct|intval}
+      {$result.correct|intval}
     </td>
     <td align="left" style="border-right: 1px solid #FFFFFF;border-bottom: 1px solid #FFFFFF;
                               background-color: rgb(248, 246, 234); padding: 0.4em 0.4em;">
-      {count($info.errors)|intval}
+      {count($result.errors)|intval}
     </td>
   </tr>
   <tr>
-    <td colspan="5" style="background-color: {if $info.errors|count} rgb(244, 77, 39) {else} rgb(107, 181, 0) {/if};
+    <td colspan="5" style="background-color: {if $result.errors|count} rgb(244, 77, 39) {else} rgb(107, 181, 0) {/if};
             padding: 0.4em 0.4em; color: rgb(255, 255, 255)">
-      {if count($info.errors)}
+      {if count($result.errors)}
           {l s='Error sending following emails' d='dsnewsletter'}
       {else}
           {l s='All emails sent correct.' d='dsnewsletter'}
@@ -39,11 +38,10 @@
   </tr>
   <tr>
     <td colspan="5" style="background-color: rgb(255, 255, 255); padding: 0.4em 0.4em;">
-      {if $info.errors|count}
-        {foreach from=$info.errors item=email}
+      {if $result.errors|count}
+        {foreach from=$result.errors item=email}
           {$email|escape:'htmlall':'UTF-8'} </br>
         {/foreach}
       {/if}
     </td>
   </tr>
-{/foreach}

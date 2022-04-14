@@ -46,13 +46,12 @@ $(function () {
         doc.close();
         resizeIframe(frame);
         document.querySelector('a[href="#editor"]').click(); //show first tab again
-
         //full width template design
-        let tab_content = document.querySelectorAll('.tab-content');
+        let tab_content = document.getElementById('my-nav-pills');
         //remove label
-        tab_content[1].closest('.form-group').querySelector('label').remove();
+        tab_content.closest('.form-group').querySelector('label').remove();
         //remove class .col-lg-8 witch prevent full screen
-        tab_content[1].closest('.col-lg-8').classList.remove('col-lg-8');
+        tab_content.closest('.form-group').querySelector('div').className = '';
     }
 
     document.addEventListener('click', function (e) {

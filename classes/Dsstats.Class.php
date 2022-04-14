@@ -108,15 +108,18 @@ class DsstatsClass extends ObjectModel
             return array();
         }
 
-        $newsletter = Db::getInstance()->ExecuteS("SELECT s.*, d.name as news_name FROM " . _DB_PREFIX_ . "dsstats as s
-            LEFT JOIN `" . _DB_PREFIX_ . "dsnewsletter` as d ON( d.id_dsnewsletter = s.id_news ) WHERE 1" .
-            ($id_newsletter ? " AND s.id_news = " . $id_newsletter : "") .
-            ($last_30 ? " AND  date_sent BETWEEN NOW() - INTERVAL 30 DAY AND NOW() " : "" ) .
+        $newsletter = Db::getInstance()->ExecuteS("
+            SELECT s.*, d.name as news_name 
+            FROM " . _DB_PREFIX_ . "dsstats as s
+            LEFT JOIN `" . _DB_PREFIX_ . "dsnewsletter` as d ON( d.id_dsnewsletter = s.id_news ) 
+            WHERE 1" . ($id_newsletter ? " AND s.id_news = " . $id_newsletter : "") .
+            ($last_30 ? " AND  s.date_sent >= NOW() - INTERVAL 30 DAY" : "" ) .
             " ORDER BY s.id_dsstats " . $order);
 
         if ($failed_number) {
             array_walk($newsletter, function (&$newsletter) {
-                $newsletter['failed'] = count(explode(',', $newsletter['failed']));
+                $newsletter['failed'] = ($newsletter['failed'] ?
+                    count( explode(',', $newsletter['failed']) ) : 0);
             });
         }
 
@@ -133,7 +136,7 @@ class DsstatsClass extends ObjectModel
             'total_unsubscribe' => 0,
         );
 
-        $stats = self::getStatsByNewsletterID($id_newsletter, true, "ASC");
+        $stats = self::getStatsByNewsletterID($id_newsletter, true);
 
         foreach ($stats as $key => $stat) {
             foreach (array_keys($total) as $field) {

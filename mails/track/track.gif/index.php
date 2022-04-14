@@ -3,10 +3,10 @@ include(dirname(__FILE__).'/../../../../../config/config.inc.php');
 include(dirname(__FILE__).'/../../../dsnewsletter.php');
 
 // Insert into database
-$id = (Tools::getValue('id_dsnewsletter') ? Dsnewsletter::encryptDecryptInfo(Tools::getValue('id_dsnewsletter'), 'decrypt') : null);
+$id = (Tools::getValue('idst') ? Dsnewsletter::decryptText(Tools::getValue('idst')) : null);
 
 if ($id && ValidateCore::isInt($id)) {
-    Db::getInstance()->Execute("UPDATE `"._DB_PREFIX_."dsnewsletter` SET open = open + 1 WHERE id_dsnewsletter = '".(int)$id."'");
+    Db::getInstance()->Execute("UPDATE `"._DB_PREFIX_."dsstats` SET open = open + 1 WHERE id_dsstats = " . (int)$id);
 }
 
 header('Content-type: image/gif');

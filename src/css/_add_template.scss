@@ -6,6 +6,7 @@
   height: 100%;
   z-index: 99999;
   overflow-y: scroll;
+  background: #fff;
 
   .panel {
     border-radius: 0 !important;
@@ -21,14 +22,6 @@
     width: 100%;
   }
 
-  /*Fix for 1.6 chosen*/
-  .chosen-container {
-    width: 100% !important;
-    border: 1px solid #c7d6db;
-    border-radius: 2px;
-    margin: 0 auto;
-  }
-
   #templates {
     text-align: center;
     padding-top: 70px;
@@ -37,4 +30,14 @@
   .modal-backdrop {
     z-index: 1048;
   }
+
+  #generate_new_tags, #generate_featured_tags {
+    margin-bottom: 5px;
+  }
+
+  #tags a {
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+
 }

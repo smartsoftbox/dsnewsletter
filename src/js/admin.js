@@ -6,88 +6,7 @@
  */
 
 $(function () {
-    /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
-    nv.addGraph(function() {
-        var chart = nv.models.lineChart()
-            .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-            .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
-            .transitionDuration(350)  //how fast do you want the lines to transition?
-            .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
-            .showYAxis(true)        //Show the y-axis
-            .showXAxis(true)        //Show the x-axis
-        ;
-
-        chart.xAxis     //Chart x-axis settings
-            .axisLabel('Date')
-            .tickFormat(function(d) {
-                return d3.time.format('%x')(new Date(d * 1000))
-            });
-
-        chart.yAxis     //Chart y-axis settings
-            .axisLabel('Amount')
-            .tickFormat(d3.format('.02f'));
-
-        /* Done setting the chart up? Time to render it!*/
-        var myData = loadStats();   //You need data...
-
-        d3.select('#chart svg')    //Select the <svg> element you want to render the chart in.
-            .attr("preserveAspectRatio", "xMinYMin meet")
-            .attr("viewBox", "0 0 720 380")
-            .datum(myData)         //Populate the <svg> element with chart data...
-            .call(chart);          //Finally, render the chart!
-
-        //Update the chart when window resizes.
-        nv.utils.windowResize(function() { chart.update() });
-        return chart;
-    });
-    /**************************************
-     * Simple test data generator
-     */
-    function loadStats() {
-        var send = [],open = [],
-            click = [], failed = [];
-
-        //Data is represented as an array of {x,y} pairs.
-        for (var i = 0; i < stats.length; i++) {
-            send.push( {x: stats[i]['date_sent'], y: stats[i]['sent_number']} );
-            open.push( {x: stats[i]['date_sent'], y: stats[i]['open']} );
-            click.push( {x: stats[i]['date_sent'], y: stats[i]['click']} );
-            failed.push( {x: stats[i]['date_sent'], y: stats[i]['failed']} );
-        }
-
-        if(!stats.length) {
-            send.push( {x: 0, y: 0} );
-            open.push( {x: 0, y: 0} );
-            click.push( {x: 0, y: 0} );
-            failed.push( {x: 0, y: 0} );
-        }
-
-        //Line chart data should be sent as an array of series objects.
-        return [
-            {
-                values: send,      //values - represents the array of {x,y} data points
-                key: 'Send', //key  - the name of the series.
-                color: '#ff7f0e'  //color - optional: choose your own line color.
-            },
-            {
-                values: open,
-                key: 'Open',
-                color: '#2ca02c'
-            },
-            {
-                values: click,
-                key: 'Click',
-                color: '#7777ff'
-            },
-            {
-                values: failed,
-                key: 'Failed',
-                color: '#7777ff'
-            }
-        ];
-    }
-
-    $('.timepicker').datetimepicker({
+    $('.datetimepicker').datetimepicker({
         prevText: '',
         nextText: '',
         dateFormat: 'yy-mm-dd',
@@ -146,46 +65,31 @@ $(function () {
         target_customer.change();
     }
 
-    //sent newsletter manually
-    //remove default onclick event
-    $(document.body).on('click', 'a.sent', function (e) {
-        e.preventDefault();
-        var animateFunc = function () {
-            $.ajax({
-                type: 'GET',
-                url: urlJson + '&ajax=1&action=getProgress',
-                success: function (response) {
-                    var progress = parseInt(response);
-                    console.log(progress);
-                    if (progress < 100 || progress === -1) {
-                        if (progress === -1) {
-                            response = 'estimating...'
-                        }
-                        $('#overlay').show();
-                        $('#progress').html(response);
-                        setTimeout(animateFunc, 1000);
-                    } else {
-                        clearInterval(animateFunc);
-                        $('#overlay').hide();
-                    }
-                }
-            });
-        };
-        setTimeout(animateFunc, 1000);
-
-        $('a.sent').fancybox({
-            type: 'ajax',
-            onCleanup: function () {
-                window.location.reload(true);
-            },
-            afterClose: function () {
-                window.location.reload(true);
-            },
-        });
-    });
-
     $('.statistics td').removeAttr('onclick');
+
+    //fade in cron options if cron switch is disable
+    let cron = $('input[name="cron"]');
+    if(cron.length) {
+        cron.change(function () {
+            showHideCronSettings($(this).val());
+        });
+        showHideCronSettings($('#cron_on').is(':checked'));
+    }
 });
+
+function showHideCronSettings($value) {
+    if ($value == true) {
+        document.getElementById('cron_hour').closest('.form-group').classList.remove("reduced-opacity");
+        document.getElementById('cron_day').closest('.form-group').classList.remove("reduced-opacity");
+        document.getElementById('cron_week').closest('.form-group').classList.remove("reduced-opacity");
+        document.getElementById('cron_month').closest('.form-group').classList.remove("reduced-opacity");
+    } else {
+        document.getElementById('cron_hour').closest('.form-group').classList.add("reduced-opacity");
+        document.getElementById('cron_day').closest('.form-group').classList.add("reduced-opacity");
+        document.getElementById('cron_week').closest('.form-group').classList.add("reduced-opacity");
+        document.getElementById('cron_month').closest('.form-group').classList.add("reduced-opacity");
+    }
+}
 
 function make_chosen_autocomplete(id, url, show_id = false) {
     $('div#' + id + '_chosen .search-field input').keyup(delay(function () {
