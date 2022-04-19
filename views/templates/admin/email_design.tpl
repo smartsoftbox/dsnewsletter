@@ -54,15 +54,46 @@
     <script src="http://editor.unlayer.com/embed.js"></script>
     <script>
         let placeholder = '{$placeholder|escape:'html':'UTF-8'}'; // image product url for tags
+        let id_template = '{$id_template|escape:'html':'UTF-8'}';
+
         document.addEventListener("DOMContentLoaded", function(event) {
             // Your code to run since DOM is loaded and ready
             unlayer.init({
                 id: 'app-mail',
                 displayMode: 'email',
             });
+
+            unlayer.registerCallback('image', function(file, done) {
+                var data = new FormData()
+                data.append('images', file.attachments[0])
+
+                fetch(urlJson + '&id_template=' + id_template + '&action=uploadImage', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    body: data
+                }).then(response => {
+                    // Make sure the response was valid
+                    if (response.status >= 200 && response.status < 300) {
+                        return response
+                    } else {
+                        var error = new Error(response.statusText)
+                        error.response = response
+                        throw error
+                    }
+                }).then(response => {
+                    return response.json()
+                }).then(data => {
+                    // Pass the URL back to Unlayer to mark this upload as completed
+                    done({ progress: 100, url: data.filelink })
+                })
+            });
+
             if(document.getElementById('design').value) {
                 unlayer.loadDesign(JSON.parse(document.getElementById('design').value));
             }
+
             document.getElementById('dstemplate_form_submit_btn').addEventListener('click', function(e){
                 e.preventDefault();
                 unlayer.exportHtml(function(data) {

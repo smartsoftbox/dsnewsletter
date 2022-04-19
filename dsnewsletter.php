@@ -81,13 +81,23 @@ class Dsnewsletter extends Module
             return false;
         }
 
-        $langs = Language::getLanguages(false);
-        foreach ($langs as $lang) {
-            $this->makePath(dirname(__FILE__) . '/views/mails/' . $lang['iso_code']);
+        $languages = Language::getLanguages(false);
+        foreach ($languages as $language) {
+            $this->makePath(dirname(__FILE__) . '/views/mails/' . $language['iso_code']);
             $this->recurseCopy(
                 dirname(__FILE__) . '/mails/xx/',
-                dirname(__FILE__) . '/mails/' . $lang['iso_code'] . '/'
+                dirname(__FILE__) . '/mails/' . $language['iso_code'] . '/'
             );
+        }
+
+        // copy placeholder for product
+        if( !file_exists(dirname(__FILE__) . '/../../img/tag.jpg') ) {
+            if (!Tools::copy(
+                dirname(__FILE__) . '/views/img/tag.jpg',
+                dirname(__FILE__) . '/../../img/tag.jpg')) {
+                $this->_errors[] = ('Can not copy product image placeholder.');
+                return false;
+            }
         }
 
         $this->makePath(dirname(__FILE__) . '/views/img/mails/template');
@@ -1281,13 +1291,13 @@ class Dsnewsletter extends Module
         }
 
         $helper->fields_value['html'] = '';
-        $helper->fields_value['email_design'] = $this->createEmailDesign($files);
+        $helper->fields_value['email_design'] = $this->createEmailDesign($files, $id_template);
         $helper->fields_value['save_template_id_lang[]'] = Tools::getValue('template_id_lang');
 
         $this->html .= $helper->generateForm(array($fields_form));
     }
 
-    protected function createEmailDesign($files)
+    protected function createEmailDesign($files, $id_template)
     {
         $this->context->smarty->assign(array(
             'html_content_with_tags' => $this->addTagsToContentForDesign($files['content']),
@@ -1295,6 +1305,7 @@ class Dsnewsletter extends Module
             'tags' => Tags::getTagsLabelsWithoutTrack(),
             'placeholder' => self::getProductImagePlaceholder(),
             'mail_name' => 'test',
+            'id_template' => $id_template
         ));
 
         return $this->context->smarty->fetch(_PS_MODULE_DIR_ .
@@ -2197,7 +2208,7 @@ class Dsnewsletter extends Module
      */
     private function uploadImage()
     {
-        $name = $_FILES['images']['name'][0];
+        $name = $_FILES['images']['name'];
         $id_template = Tools::getValue('id_template');
 
         if (!$id_template) {
@@ -2206,12 +2217,12 @@ class Dsnewsletter extends Module
 
         $this->makePath(dirname(__FILE__) . "/views/img/mails/template/" . $id_template);
 
-        if (isset($name) && isset($_FILES['images']['tmp_name'][0]) &&
-            !empty($_FILES['images']['tmp_name'][0])) {
+        if (isset($name) && isset($_FILES['images']['tmp_name']) &&
+            !empty($_FILES['images']['tmp_name'])) {
             if (file_exists(dirname(__FILE__) . "/views/img/mails/template/$id_template/$name")) {
                 unlink(dirname(__FILE__) . "/views/img/mails/template/$id_template/$name");
             }
-            if (!move_uploaded_file($_FILES['images']['tmp_name'][0], dirname(__FILE__) .
+            if (!move_uploaded_file($_FILES['images']['tmp_name'], dirname(__FILE__) .
                 "/views/img/mails/template/$id_template/$name")) {
                 return false;
             }
@@ -2219,15 +2230,11 @@ class Dsnewsletter extends Module
                 "/views/img/mails/template/$id_template/$name");
         }
 
-        $this->smarty->assign(array(
-            'name' => $name,
-            'id_template' => $id_template,
-            'width' => $width,
-            'height' => $height,
-            'base' => Tools::getHttpHost(true) .  __PS_BASE_URI__
-        ));
+        $object = new stdClass();
+        $object->filelink = Tools::getHttpHost(true) . __PS_BASE_URI__ .
+            "modules/dsnewsletter/views/img/mails/template/$id_template/$name";
 
-        echo json_encode($this->display(__FILE__, '/views/templates/admin/image.tpl'));
+        echo json_encode($object);
     }
 
     /**

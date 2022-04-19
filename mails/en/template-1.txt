@@ -1,4 +1,4 @@
-                                                FRESH NEW PRODUCTS FROM OUR MARKETPLACE
+                        FRESH NEW PRODUCTS FROM OUR MARKETPLACE
 A collection of cool new products selected for you.
 
 {PRODUCT_NEW_1_NAME}
@@ -27,5 +27,4 @@ A collection of cool new products selected for you.
 
 {shop_name}
 Powered by PrestaShop
-                    
                     
