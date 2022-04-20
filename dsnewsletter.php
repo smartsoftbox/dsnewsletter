@@ -2210,9 +2210,9 @@ class Dsnewsletter extends Module
     {
         $name = $_FILES['images']['name'];
         $id_template = Tools::getValue('id_template');
-
+        // upload images to next template id
         if (!$id_template) {
-            $id_template = 0;
+            $id_template = $this->getNextTemplateId();
         }
 
         $this->makePath(dirname(__FILE__) . "/views/img/mails/template/" . $id_template);
@@ -2226,8 +2226,6 @@ class Dsnewsletter extends Module
                 "/views/img/mails/template/$id_template/$name")) {
                 return false;
             }
-            list($width, $height) = getimagesize(dirname(__FILE__) .
-                "/views/img/mails/template/$id_template/$name");
         }
 
         $object = new stdClass();
@@ -2252,27 +2250,6 @@ class Dsnewsletter extends Module
         }
 
         echo json_encode('deleted');
-    }
-
-    /**
-     * @param $user
-     *
-     * @internal param $users
-     * @internal param $i
-     *
-     */
-    private function addListBadge($user)
-    {
-        if ($user['dslist_id']) {
-            $ids = explode(',', $user['dslist_id']);
-            foreach ($ids as $id) {
-                $this->smarty->assign(array(
-                    'id_list' => $id
-                ));
-                $user['list'] .= $this->display(__FILE__, '/views/templates/admin/badge.tpl');
-            }
-        }
-        return $user;
     }
 
     private function getNextTemplateId()
@@ -2370,7 +2347,7 @@ class Dsnewsletter extends Module
         echo json_encode($data);
     }
 
-    function randomColor ($minVal = 175, $maxVal = 255)
+    public function randomColor ($minVal = 175, $maxVal = 255)
     {
         $minVal = $minVal < 0 || $minVal > 255 ? 0 : $minVal;
         $maxVal = $maxVal < 0 || $maxVal > 255 ? 255 : $maxVal;
