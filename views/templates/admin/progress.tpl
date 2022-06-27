@@ -1,3 +1,10 @@
+{*
+*  @author Marcin Kubiak
+*  @copyright  Smart Soft
+*  @license    Commercial license
+*  International Registered Trademark & Property of Smart Soft
+*}
+
 <div id="completion_mail_wrapper" class="clear panel">
     <div id="completion_newsletter">
         <div id="newsletter_progressbar_tab"></div>

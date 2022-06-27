@@ -119,7 +119,7 @@ class DsstatsClass extends ObjectModel
         if ($failed_number) {
             array_walk($newsletter, function (&$newsletter) {
                 $newsletter['failed'] = ($newsletter['failed'] ?
-                    count( explode(',', $newsletter['failed']) ) : 0);
+                    count(explode(',', $newsletter['failed'])) : 0);
             });
         }
 

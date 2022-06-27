@@ -6,9 +6,7 @@
 *}
 
 {if $is_16}
-
-    <p class="alert alert-success">{$message|escape:'intval':'UTF-8'}</p>
-
+    <p class="alert alert-success">{$message|escape:'html':'UTF-8'}</p>
 {else}
 
 {extends file='page.tpl'}
@@ -17,7 +15,7 @@
 {/block}
 
 {block name='page_content_container'}
-    <p class="alert alert-success">{$message|escape:'intval':'UTF-8'}</p>
+    <p class="alert alert-success">{$message|escape:'html':'UTF-8'}</p>
 {/block}
 
 {/if}
