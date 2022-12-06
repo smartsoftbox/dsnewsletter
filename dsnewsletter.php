@@ -30,7 +30,7 @@ class Dsnewsletter extends Module
     {
         $this->name = 'dsnewsletter';
         $this->tab = 'administration';
-        $this->version = '1.9.0';
+        $this->version = '2.0.0';
         $this->author = 'DevSoft';
         $this->module_key = '65056cdb693e390a5cd199335c27dcdb';
         $this->bootstrap = true;
@@ -444,6 +444,7 @@ class Dsnewsletter extends Module
         )
         ) {
             Tools::dieOrLog(Tools::displayError('Error: Problem sending report.'), false);
+            return false;
         } else {
             return true;
         }
@@ -518,7 +519,7 @@ class Dsnewsletter extends Module
                 echo $this->displayTagsForm();
                 break;
             case 'defaultdsnewsletter':
-                $this->sentNewsletter(Tools::getValue('id_dsnewsletter'));
+                $this->sendNewsletter(Tools::getValue('id_dsnewsletter'));
                 break;
             case 'details':
                 $this->details();
@@ -618,8 +619,7 @@ class Dsnewsletter extends Module
             $this->sentTestEmail(
                 NEWSLETTER,
                 $newsletter,
-                Configuration::get('PS_LANG_DEFAULT'),
-                true
+                Configuration::get('PS_LANG_DEFAULT')
             );
             //confirmation messages
             if(Tools::isSubmit('sent_test_newsletter_list')) {
@@ -1152,7 +1152,7 @@ class Dsnewsletter extends Module
     }
 
 
-    public function getMailFiles($id, $type, $template_id_lang = null, $show_tag_click = false, $show_tag_track = false)
+    public function getMailFiles($id, $template_id_lang = null, $remove_tag_click = true, $remove_tag_track = true)
     {
         $mails = array();
 
@@ -1161,17 +1161,24 @@ class Dsnewsletter extends Module
         }
         $iso_code = Language::getIsoById($template_id_lang);
         $mails['content'] = $this->fileGetContent(
-            $this->getMailFilePath($type, $iso_code, $id, FILETYPE_HTML)
+            $this->getMailFilePath(TEMPLATE, $iso_code, $id, FILETYPE_HTML)
         );
         $mails['plaintext'] = $this->fileGetContent(
-            $this->getMailFilePath($type, $iso_code, $id, FILETYPE_TXT)
+            $this->getMailFilePath(TEMPLATE, $iso_code, $id, FILETYPE_TXT)
         );
-        if($type === TEMPLATE) {
-            $mails['design'] = $this->fileGetContent(
-                $this->getMailFilePath(DESIGN, $iso_code, $id, FILETYPE_JSON)
-            );
+        $mails['design'] = $this->fileGetContent(
+            $this->getMailFilePath(DESIGN, $iso_code, $id, FILETYPE_JSON)
+        );
+        // remove tag click
+        if($remove_tag_click) {
+            $mails['content'] = str_replace(TAG_CLICK, '', $mails['content']);
+            $mails['plaintext'] = str_replace(TAG_CLICK, '', $mails['plaintext']);
         }
-
+        // remove tag track
+        if($remove_tag_track) {
+            $mails['content'] = str_replace(TAG_TRACK, '', $mails['content']);
+            $mails['plaintext'] = str_replace(TAG_TRACK, '', $mails['plaintext']);
+        }
         return $mails;
     }
 
@@ -1214,7 +1221,7 @@ class Dsnewsletter extends Module
         $template_id_lang = (Tools::getValue('template_id_lang')?: Configuration::get('PS_LANG_DEFAULT'));
 
         $template = new DstemplateClass($id_template);
-        $files = $this->getMailFiles($id_template, TEMPLATE, $template_id_lang);
+        $files = $this->getMailFiles($id_template, $template_id_lang);
 
         $fields_form = array(
             'form' => array (
@@ -2033,7 +2040,7 @@ class Dsnewsletter extends Module
         Configuration::updateGlobalValue('DSNEWSLETTER_PROGRESS', '');
     }
 
-    public function sentNewsletter($id_newsletter)
+    public function sendNewsletter($id_newsletter)
     {
         $email_correct = array();
         $email_errors = array();
@@ -2055,9 +2062,9 @@ class Dsnewsletter extends Module
         //get languages newsletter want to send
         $newsletter_languages = explode(',', $newsletter->id_lang);
         foreach ($newsletter_languages as $id_lang) {
-            $emails[$id_lang] = $this->getMailFiles($newsletter->id, NEWSLETTER, $id_lang, true, true);
+            // get template to send not newsletter
+            $emails[$id_lang] = $this->getMailFiles($newsletter->id_template, $id_lang, false, false);
         }
-
         $email_attachments = $this->getAttachments($newsletter->id);
 
         if ($subscribers) {
@@ -2084,13 +2091,11 @@ class Dsnewsletter extends Module
                     $stats->id,
                     true
                 );
-                $tags = $tags->getAllWithValue();
-
                 if (Mail::Send(
                     $id_lang,
-                    'newsletter-'.$newsletter->id,
-                    Mail::l($newsletter->name, $id_lang),
-                    $tags,
+                    'template-'.$newsletter->id_template, //get template not news
+                    $this->getTitle($emails[$id_lang]['design']),
+                    $tags->getAllWithValue(),
                     $subscriber['email'],
                     null,
                     $newsletter->sender_email,
@@ -2127,15 +2132,20 @@ class Dsnewsletter extends Module
         echo $this->display(__FILE__, '/views/templates/admin/report.tpl');
     }
 
-    private function sentTestEmail($type, $object, $id_lang, $click_wrapper = false)
+    private function getTitle($design_json)
     {
-        $emails = $this->getMailFiles($object->id, $type, $id_lang, $click_wrapper);
+        $design = json_decode($design_json);
+        return $design->subject;
+    }
 
+    private function sentTestEmail($type, $object, $id_lang)
+    {
+        $emails = $this->getMailFiles($object->id, $id_lang, true, true);
+        $title = $this->getTitle($emails['design']);
         $email_attachments = array();
         if($type === NEWSLETTER) {
             $email_attachments = $this->getAttachments($object->id);
         }
-
         $tags = new Tags(
             $emails['content'],
             $id_lang,
@@ -2149,7 +2159,7 @@ class Dsnewsletter extends Module
         if (Mail::Send(
             $this->context->language->id,
             'template-'.$object->id,
-            Mail::l('Test template', $this->context->language->id),
+            Mail::l($title, $this->context->language->id),
             $tags->getAllWithValue(),
             Configuration::get('DSNEWSLETTER_TEST_EMAIL'),
             null,
@@ -2396,7 +2406,7 @@ class Dsnewsletter extends Module
 
         /* save html */
         if (!$this->saveHtmlToFile(
-            Tools::getValue('html'),
+            Tags::addWrapperTagToLinks(Tools::getValue('html')),
             $this->getMailFilePath(TEMPLATE, $iso_code, $template->id, FILETYPE_HTML)
         )) {
             $this->_errors[] = $this->l('Error save template file');
@@ -2779,11 +2789,6 @@ class Dsnewsletter extends Module
             $newsletter->auto = 1;
         }
         $newsletter->save();
-
-        $languages = Language::getLanguages(false);
-        foreach ($languages as $language) {
-            $this->saveNewsletterFiles($language['iso_code'], $newsletter);
-        }
         $this->uploadAttachment($newsletter);
 
         if (Tools::isSubmit('submitAddNewsletterAndStay')) {
@@ -2841,31 +2846,5 @@ class Dsnewsletter extends Module
             $this->_errors[] = $this->l('Failed to copy the file.');
         }
         @unlink($_FILES['file']['tmp_name']);
-    }
-
-    /**
-     * @param $iso_code
-     * @param DsnewsletterClass $newsletter
-     * @return void
-     */
-    private function saveNewsletterFiles($iso_code, $newsletter)
-    {
-        $html = $this->getMailFilePath(NEWSLETTER, $iso_code, $newsletter->id, FILETYPE_HTML);
-        $text = $this->getMailFilePath(NEWSLETTER, $iso_code, $newsletter->id, FILETYPE_TXT);
-        if (file_exists($html)) {
-            return;
-        }
-        $html_template = file_get_contents(
-            $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_HTML)
-        );
-        $text_template = file_get_contents(
-            $this->getMailFilePath(TEMPLATE, $iso_code, $newsletter->id_template, FILETYPE_TXT)
-        );
-        //save text version
-        file_put_contents($text, Tags::addWrapperTagToPlainTextLinks($text_template));
-        //save html version
-        if (!$this->saveHtmlToFile(Tags::addWrapperTagToLinks($html_template), $html)) {
-            $this->_errors[] = $this->l('error save html version');
-        }
     }
 }

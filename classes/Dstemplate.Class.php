@@ -24,7 +24,7 @@ class DstemplateClass extends ObjectModel
         'table' => 'dstemplate',
         'primary' => 'id_dstemplate',
         'fields' => array(
-            'name' =>                 array('type' => self::TYPE_STRING, 'validate' => 'isString'),
+            'name' => array('type' => self::TYPE_STRING, 'validate' => 'isString'),
         )
     );
   
