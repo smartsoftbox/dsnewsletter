@@ -19,20 +19,17 @@ const ID = 'id';
 class Tags
 {
     public static $tags_label = array(
-        '{shop_name}',
-        '{shop_logo}',
-        '{shop_url}',
-        '{first_name}',
-        '{last_name}',
-        '{date1}',
-        '{date2}',
-        '{date3}',
-        '{date4}',
-        '{date5}',
-        '{subscribe}',
-        '{unsubscribe}',
-        '{charset}',
-        '{track}',
+        '{{shop.name}}',
+        '{{shop.logo}}',
+        '{{shop.url}}',
+        '{{user.first_name}}',
+        '{{user.last_name}}',
+        '{{date.normal}}',
+        '{{date.full}}',
+        '{{newsletter.subscribe}}',
+        '{{newsletter.unsubscribe}}',
+        '{{charset}}',
+        '{{track}}',
     );
     private $id_lang;
     private $first_name;
@@ -154,6 +151,7 @@ class Tags
             $copy_tag = $this->removeBrackets($copy_tag); // remove brackets
 
             if ($this->isStartWithString('product_', $copy_tag)) {
+                $copy_tag = str_replace('.', '_', $copy_tag); // replace dots to underscore
                 $copy_tag = explode('_', $copy_tag);
                 $function = 'get' . ucfirst($copy_tag[0])  . ucfirst($copy_tag[1]) . ucfirst($copy_tag[3]);
 
@@ -163,7 +161,7 @@ class Tags
                 } else if ($copy_tag[1] === FEATURED) {
                     $product = $featured_products_with_nb_key[$copy_tag[2]];
                 } else if ($copy_tag[1] === ID) {
-                    $product = (array)new Product($copy_tag[2]);
+                    $product = (array)new Product($copy_tag[2], 1);
                 }
 
                 $limit = (isset($copy_tag[4]) ? $copy_tag[4] : false); // check if limit is set
@@ -178,10 +176,11 @@ class Tags
 
     public function getProductsNbByType($start, $tags)
     {
-        $start = '{product_' . $start;
+        $start = '{{product_' . $start;
         $nb = array();
         foreach ($tags as $tag) {
             if ($this->isStartWithString($start, $tag)) {
+                $tag = str_replace('.', '_', $tag);
                 $tag = explode('_', $tag);
                 if (isset($tag[2])) {
                     $nb[] = (int)$tag[2];
@@ -199,6 +198,7 @@ class Tags
 
     public function convertUnderscoreToCapital($string)
     {
+        $string = str_replace('.', '_', $string);
         return implode('', array_map('ucfirst', explode('_', $string)));
     }
 
@@ -222,7 +222,7 @@ class Tags
         return $this->getProductImageLink($product['id_product']);
     }
 
-    public function getProductNewLink($product, $limit = 0)
+    public function getProductNewUrl($product, $limit = 0)
     {
         return Context::getContext()->link->getproductlink(new Product($product['id_product']));
     }
@@ -242,19 +242,19 @@ class Tags
         return $this->getProductImageLink($product['id_product']);
     }
 
-    public function getProductFeaturedLink($product, $limit = 0)
+    public function getProductFeaturedUrl($product, $limit = 0)
     {
         return Context::getContext()->link->getproductlink(new Product($product['id_product']));
     }
 
     public function getProductIdName($product, $limit = 0)
     {
-        return $this->limitStringAndAddDots($product['name'], $limit);
+        return $this->limitStringAndAddDots($product['name'][$this->id_lang], $limit);
     }
 
     public function getProductIdDesc($product, $limit = 0)
     {
-        return $this->limitStringAndAddDots($product['description'], $limit);
+        return $this->limitStringAndAddDots($product['description'][$this->id_lang], $limit);
     }
 
     public function getProductIdLink($product, $limit = 0)
@@ -284,47 +284,32 @@ class Tags
         return $this->getShopUrl() . 'img/logo.jpg';
     }
 
-    public function getFirstName()
+    public function getUserFirstName()
     {
         return $this->first_name;
     }
 
-    public function getLastName()
+    public function getUserLastName()
     {
         return $this->last_name;
     }
 
-    public function getDate1()
+    public function getDateNormal()
     {
-        return date("d-m-y", time());     // 07-02-08
+        return Tools::displayDate(date('Y-m-d H:i:s'));
     }
 
-    public function getDate2()
+    public function getDateFull()
     {
-        return date("D d/n/Y", time());     // Thu 7/2/2008
+        return Tools::displayDate(date('Y-m-d H:i:s'), null, true);
     }
 
-    public function getDate3()
-    {
-        return date("d M y", time());     //07 Feb 08
-    }
-
-    public function getDate4()
-    {
-        return date("l jS of F", time());     // Thursday 7th of February
-    }
-
-    public function getDate5()
-    {
-        return date("l jS of F g:i A.", time());     // Thursday 7th of February 4:45 PM.
-    }
-
-    public function getSubscribe()
+    public function getNewsletterSubscribe()
     {
         return $this->getLink(SUBSCRIBE);
     }
 
-    public function getUnsubscribe()
+    public function getNewsletterUnsubscribe()
     {
         return $this->getLink(UNSUBSCRIBE);
     }
@@ -411,7 +396,7 @@ class Tags
      */
     public function getProductPattern($type, $field, $limit = null)
     {
-        return '{product_' . $type . '_[0-99]_' . $field . ($limit ? '_[0-99]' : '') . '}';
+        return '{product_' . $type . '.' . '[0-99]' . '.' . $field . ($limit ? '_[0-99]' : '') . '}';
     }
 
     /**
@@ -522,7 +507,7 @@ class Tags
             $patterns[] = $this->getProductPattern($product_type, 'name', true);
             $patterns[] = $this->getProductPattern($product_type, 'desc');
             $patterns[] = $this->getProductPattern($product_type, 'desc', true);
-            $patterns[] = $this->getProductPattern($product_type, 'link');
+            $patterns[] = $this->getProductPattern($product_type, 'url');
             $patterns[] = $this->getProductPattern($product_type, 'image');
         }
         return $patterns;
@@ -535,7 +520,7 @@ class Tags
     public function getTags($content)
     {
         $tags = array();
-        preg_match_all('/{(.*?)}/', $content, $tags);
+        preg_match_all('/{{(.*?)}}/', $content, $tags);
         return $tags;
     }
 }

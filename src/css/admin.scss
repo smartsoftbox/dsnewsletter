@@ -1,5 +1,8 @@
 @import "add_template";
 
+.ant-page-header {
+  display: none;
+}
 /*panel*/
 #links img{
     height: 14px;
@@ -183,9 +186,6 @@ ul.nav.nav-pills {
 }
 .bootstrap .form-horizontal .form-wrapper {
     max-width: 100%;
-}
-#app-mail {
-    height: 500px;
 }
 .bootstrap li.active-news a {
   color: #a9302a;
