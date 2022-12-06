@@ -60,7 +60,7 @@ class DsnewsletterCronModuleFrontController extends ModuleFrontController
         if (is_array($active_newsletters) and count($active_newsletters) > 0) {
             foreach ($active_newsletters as $active_newsletter) {
                 if ($active_newsletter['cron'] && $this->isTimeForRun($active_newsletter)) {
-                    $this->module->sentNewsletter($active_newsletter['id_dsnewsletter']);
+                    $this->module->sendNewsletter($active_newsletter['id_dsnewsletter']);
                     $this->updateLastExport($active_newsletter);
                 }
             }
