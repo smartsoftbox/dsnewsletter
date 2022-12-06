@@ -1,5 +1,5 @@
 <?php
-/**
+/***
  * 2016 Smart Soft.
  *
  * @author    Marcin Kubiak

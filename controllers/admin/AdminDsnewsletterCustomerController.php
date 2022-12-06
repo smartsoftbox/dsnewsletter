@@ -144,15 +144,14 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
     public function initProcess()
     {
         parent::initProcess();
-
-        if ((isset($_GET['list_action' . $this->table]) || isset($_GET['list_action'])) && Tools::getValue($this->identifier)) {
+        if ((Tools::getIsset($_GET['list_action' . $this->table]) || Tools::getIsset($_GET['list_action'])) &&
+            Tools::getValue($this->identifier)) {
             $this->updateListSelectedCustomer(
                 new DslistClass($this->id_list),
                 array(Tools::getValue('id_customer')),
                 'toggle'
             );
         }
-
         foreach ($this->bulk_actions as $bulk_action => $params) {
             if (Tools::isSubmit('submitBulk' . $bulk_action . $this->table)) {
                 if (strpos($bulk_action, 'addToList') !== false ||
@@ -164,7 +163,6 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
                     $this->errors[] = $this->trans('You do not have permission to edit this.', [],
                         'Admin.Notifications.Error');
                 }
-
                 break;
             }
         }

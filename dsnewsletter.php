@@ -2589,7 +2589,7 @@ class Dsnewsletter extends Module
      * @param $redirect
      * @return string
      */
-    function getParams($redirect)
+    private function getParams($redirect)
     {
         $params = $redirect;
         if ( is_array($redirect) ) {

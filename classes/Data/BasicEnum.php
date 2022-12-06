@@ -1,5 +1,5 @@
 <?php
-/**
+/***
  * 2020 Smart Soft.
  *
  * @author    Marcin Kubiak
@@ -74,7 +74,7 @@ abstract class BaseEnum
         return in_array($value, $values, $strict);
     }
 
-    /**
+    /***
      * @param $key
      * @return string
      */

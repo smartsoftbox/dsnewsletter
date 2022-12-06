@@ -15,7 +15,7 @@
         <div class="block-mail" >
             <div class="mail-form">
                 <div class="thumbnail mail-html-frame">
-                    {$html_content_with_tags}
+                    {$html_content_with_tags|escape:'html':'UTF-8'}
                 </div>
             </div>
         </div>
@@ -38,9 +38,9 @@
         </div>
     </div>
 
-    <script type="module" crossorigin src="../modules/dsnewsletter/views/js/easy-email/index.js"></script>
-    <link rel="modulepreload" href="../modules/dsnewsletter/views/js/easy-email/vendor.js">
-    <link rel="stylesheet" href="../modules/dsnewsletter/views/js/easy-email/index.css">
+    <script type="module" crossorigin src="../modules/dsnewsletter/views/js/easy.js"></script>
+    <link rel="modulepreload" href="../modules/dsnewsletter/views/js/vendor.js">
+    <link rel="stylesheet" href="../modules/dsnewsletter/views/css/index.css">
 
     <script>
         let id_template = '{$id_template|escape:'html':'UTF-8'}';
