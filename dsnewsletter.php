@@ -18,8 +18,8 @@ define('DESIGN', 'design');
 define('FILETYPE_TXT', 'txt');
 define('FILETYPE_HTML', 'html');
 define('FILETYPE_JSON', 'json');
-define('TAG_CLICK', '{Click_Wrapper}');
-define('TAG_TRACK', '{track}');
+define('TAG_CLICK', '{{Click_Wrapper}}');
+define('TAG_TRACK', '{{track}}');
 define('PRODUCT_IMAGE', 'tag.jpg');
 
 class Dsnewsletter extends Module
@@ -457,22 +457,24 @@ class Dsnewsletter extends Module
             if (!Validate::isName(Tools::getValue('name')) or Tools::getValue('name') == '') {
                 $this->_errors[] = $this->l('Invalid or empty name.');
             }
-        } elseif (Tools::isSubmit('submitAddDstemplate') or Tools::isSubmit('submitEditDstemplate')) {
+        } elseif (Tools::isSubmit('submitAddTemplateAndStay') or Tools::isSubmit('submitAddDstemplate')
+            or Tools::isSubmit('submitEditDstemplate')) {
             if (!Validate::isName(Tools::getValue('name')) or Tools::getValue('name') == '') {
                 $this->_errors[] = $this->l('Invalid or empty name.');
             }
-            if (!Validate::isColor(Tools::getValue('header_background'))) {
-                $this->_errors[] = $this->l('Incorrect header background color.');
+            if (!Validate::isCleanHtml(Tools::getValue('html'))) {
+                $this->_errors[] = $this->l('Incorrect html format.');
             }
-            if (!Validate::isColor(Tools::getValue('content_background'))) {
-                $this->_errors[] = $this->l('Incorrect content background color.');
+            if($design_json = Tools::getValue('design')) {
+                $design = json_decode($design_json);
+                if(!$design->subject) {
+                    $this->_errors[] = $this->l('Empty email subject.');
+                }
+                if(!$design->subTitle) {
+                    $this->_errors[] = $this->l('Empty email sub title.');
+                }
             }
-            if (!Validate::isColor(Tools::getValue('footer_background'))) {
-                $this->_errors[] = $this->l('Incorrect footer background color.');
-            }
-            if (!Validate::isCleanHtml(Tools::getValue('style'))) {
-                $this->_errors[] = $this->l('Incorrect styles field format.');
-            }
+
         } elseif (Tools::isSubmit('submitAddDsnewsletter')) {
             if (!Validate::isString(Tools::getValue('name')) or Tools::getValue('name') == '') {
                 $this->_errors[] = $this->l('Invalid or empty name.');
@@ -539,6 +541,19 @@ class Dsnewsletter extends Module
             case 'getProgress':
                 $this->getProgress();
                 break;
+            case 'getTags':
+                $tags = new Tags(
+                    Tools::getValue('template'),
+                    Tools::getValue('template_id_lang'),
+                    'John',
+                    'DOE',
+                    false,
+                    false,
+                    false
+                );
+                $class = new stdClass();
+                $class->tags = $tags->getAllWithValue();
+                echo json_encode($class);
             default:
         }
     }
@@ -1172,6 +1187,7 @@ class Dsnewsletter extends Module
 
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/clipboard.min.js');
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/add_template-min.js');
+        $this->context->controller->addCSS(_MODULE_DIR_.'dsnewsletter/views/css/add_template.css');
 
         $languages = Language::getLanguages(false);
         foreach ($languages as $k => $language) {
@@ -1220,19 +1236,13 @@ class Dsnewsletter extends Module
                         'id' => 'html'
                     ),
                     array(
-                        'type' => 'hidden',
-                        'label' => $this->l('Text'),
-                        'name' => 'plain-text',
-                        'id' => 'plain-text'
-                    ),
-                    array(
                         'type' => 'free',
                         'name' => 'email_design',
                         'label' => $this->l('Template')
                     ),
                     array(
                         'type' => 'text',
-                        'label' => $this->l('Name'),
+                        'label' => $this->l('Internal name'),
                         'name' => 'name',
                         'size' => 40,
                         'required' => true,
@@ -1302,19 +1312,12 @@ class Dsnewsletter extends Module
         $this->context->smarty->assign(array(
             'html_content_with_tags' => $this->addTagsToContentForDesign($files['content']),
             'text_content' => $files['plaintext'],
-            'tags' => Tags::getTagsLabelsWithoutTrack(),
-            'placeholder' => self::getProductImagePlaceholder(),
             'mail_name' => 'test',
             'id_template' => $id_template
         ));
 
         return $this->context->smarty->fetch(_PS_MODULE_DIR_ .
             'dsnewsletter/views/templates/admin/email_design.tpl');
-    }
-
-    public static function getProductImagePlaceholder()
-    {
-        return Tools::getHttpHost(true) .  __PS_BASE_URI__ . 'img/' . PRODUCT_IMAGE . '?';
     }
 
     public function addTagsToContentForDesign($content)
@@ -1330,8 +1333,7 @@ class Dsnewsletter extends Module
             $keys[] = $key;
             $values[] = $value;
         }
-        //remove placeholder product image
-        $content = $this->removePlaceholderProductImage($content);
+
         return str_replace($keys, $values, $content);
     }
 
@@ -2203,13 +2205,11 @@ class Dsnewsletter extends Module
         die();
     }
 
-    /**
-     * @return bool
-     */
     private function uploadImage()
     {
-        $name = $_FILES['images']['name'];
-        $id_template = Tools::getValue('id_template');
+        $type = str_replace('image/', '', $_FILES['file']['type']);
+        $name = str_replace('/tmp/', '', $_FILES['file']['tmp_name']) . '.' . $type;
+        $id_template = Tools::getValue('id_dstemplate');
         // upload images to next template id
         if (!$id_template) {
             $id_template = $this->getNextTemplateId();
@@ -2217,22 +2217,22 @@ class Dsnewsletter extends Module
 
         $this->makePath(dirname(__FILE__) . "/views/img/mails/template/" . $id_template);
 
-        if (isset($name) && isset($_FILES['images']['tmp_name']) &&
-            !empty($_FILES['images']['tmp_name'])) {
+        if (isset($name) && isset($_FILES['file']['tmp_name']) &&
+            !empty($_FILES['file']['tmp_name'])) {
             if (file_exists(dirname(__FILE__) . "/views/img/mails/template/$id_template/$name")) {
                 unlink(dirname(__FILE__) . "/views/img/mails/template/$id_template/$name");
             }
-            if (!move_uploaded_file($_FILES['images']['tmp_name'], dirname(__FILE__) .
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], dirname(__FILE__) .
                 "/views/img/mails/template/$id_template/$name")) {
                 return false;
             }
         }
 
-        $object = new stdClass();
-        $object->filelink = Tools::getHttpHost(true) . __PS_BASE_URI__ .
+        $class = new stdClass();
+        $class->url = Tools::getHttpHost(true) . __PS_BASE_URI__ .
             "modules/dsnewsletter/views/img/mails/template/$id_template/$name";
 
-        echo json_encode($object);
+        echo json_encode($class);
     }
 
     /**
@@ -2555,16 +2555,6 @@ class Dsnewsletter extends Module
             $tableName = 'emailsubscription';
         }
         return $tableName;
-    }
-
-    /**
-     * @param $content
-     * @return array|string|string[]
-     */
-    private function removePlaceholderProductImage($content)
-    {
-        $content = str_replace(Dsnewsletter::getProductImagePlaceholder(), '', $content);
-        return $content;
     }
 
     /**
