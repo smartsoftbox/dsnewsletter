@@ -144,7 +144,7 @@ class AdminDsnewsletterCustomerController extends ModuleAdminController
     public function initProcess()
     {
         parent::initProcess();
-        if ((Tools::getIsset($_GET['list_action' . $this->table]) || Tools::getIsset($_GET['list_action'])) &&
+        if ((Tools::getIsset('list_action' . $this->table) || Tools::getIsset('list_action')) &&
             Tools::getValue($this->identifier)) {
             $this->updateListSelectedCustomer(
                 new DslistClass($this->id_list),
