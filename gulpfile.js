@@ -8,6 +8,13 @@ const sync = require("browser-sync").create();
 // const filter = require("gulp-filter");
 const del = require("del");
 
+//leave comment at the beginning
+var condition = function (file) {
+    sFile = require('path').parse(file.path).name;
+    var startWithComment = file.contents.toString().replace(/\n|\r/g, "").trim().startsWith("/*");
+    return (!startWithComment);
+}
+
 function miniJS(cb) {
     src(['src/js/admin.js', 'src/js/add_template.js', 'src/js/statistics.js'])
         // .pipe(concat('bundle.js'))

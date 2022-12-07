@@ -1,6 +1,6 @@
 <?php
 /**
- * 2019 Smart Soft.
+ * 2022 Smart Soft.
  *
  *  @author    Marcin Kubiak
  *  @copyright Smart Soft
@@ -1194,7 +1194,7 @@ class Dsnewsletter extends Module
 
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/clipboard.min.js');
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/add_template-min.js');
-        $this->context->controller->addCSS(_MODULE_DIR_.'dsnewsletter/views/css/add_template.css');
+        $this->context->controller->addCSS(_MODULE_DIR_.'dsnewsletter/views/css/fix_editor.css');
 
         $languages = Language::getLanguages(false);
         foreach ($languages as $k => $language) {
