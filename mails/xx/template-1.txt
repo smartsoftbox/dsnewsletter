@@ -1,0 +1,13 @@
+FRESH NEW PRODUCTS FROM OUR MARKETPLACE
+A collection of cool new products selected for you.
+{{product_new.0.name}}
+Button ({{click_wrapper}}{{product_new.0.url}})
+{{product_new.1.name}}
+Button ({{click_wrapper}}{{product_new.0.url}})
+{{product_new.2.name}}
+Button ({{click_wrapper}}{{product_new.0.url}})
+{{product_new.3.name}}
+Button ({{click_wrapper}}{{product_new.0.url}})
+
+{{shop.name}}
+Powered by PrestaShop

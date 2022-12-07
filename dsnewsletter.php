@@ -18,7 +18,7 @@ define('DESIGN', 'design');
 define('FILETYPE_TXT', 'txt');
 define('FILETYPE_HTML', 'html');
 define('FILETYPE_JSON', 'json');
-define('TAG_CLICK', '{{Click_Wrapper}}');
+define('TAG_CLICK', '{{click_wrapper}}');
 define('TAG_TRACK', '{{track}}');
 define('PRODUCT_IMAGE', 'tag.jpg');
 
@@ -821,7 +821,7 @@ class Dsnewsletter extends Module
                 ),
                 array(
                     'type' => 'select',
-                    'label' => $this->l('Sent to customers'),
+                    'label' => $this->l('Send to customers'),
                     'name' => 'target_customer',
                     'id' => 'target_customer',
                     'class' => 'chosen',
@@ -894,7 +894,7 @@ class Dsnewsletter extends Module
                 ),
                 array(
                     'type' => 'select',
-                    'label' => $this->l('Sent to newsletter module users'),
+                    'label' => $this->l('Send to newsletter module users'),
                     'name' => 'target_news',
                     'id' => 'target_news',
                     'class' => 'chosen',
@@ -1194,7 +1194,7 @@ class Dsnewsletter extends Module
 
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/clipboard.min.js');
         $this->context->controller->addJS(_MODULE_DIR_.'dsnewsletter/views/js/add_template-min.js');
-        $this->context->controller->addCSS(_MODULE_DIR_.'dsnewsletter/views/css/fix_editor.css');
+        $this->context->controller->addCSS(_MODULE_DIR_.'dsnewsletter/views/css/fix-editor.css');
 
         $languages = Language::getLanguages(false);
         foreach ($languages as $k => $language) {
@@ -1287,7 +1287,7 @@ class Dsnewsletter extends Module
                         'icon' => 'process-icon-save',
                     ),
                     'sent-test' => array(
-                        'title' => $this->l('Sent test'),
+                        'title' => $this->l('Send test'),
                         'href' => $current_index.'&configure='.$this->name.'&token='.$token.
                             '&sent_test_template=1&id_dstemplate='.$id_template,
                         'class' => 'pull-right',
@@ -1397,7 +1397,7 @@ class Dsnewsletter extends Module
                 ),
                 array(
                     'type' => 'switch',
-                    'label' => $this->l('Sent report'),
+                    'label' => $this->l('Send report'),
                     'name' => 'sent_report',
                     'is_bool' => true,
                     'values' => array(
@@ -1575,7 +1575,7 @@ class Dsnewsletter extends Module
                     'class' => 'chosen',
                     'multiple' => true,
                     'tab' => 'general',
-                    'desc' => $this->l('Module sent newsletter with language match customer language otherwise with default Shop language'),
+                    'desc' => $this->l('Module send newsletter with language match customer language otherwise with default Shop language'),
                     'options' => array(
                         'query' => Language::getLanguages(false),
                         'id' => 'id_lang',
@@ -1695,7 +1695,7 @@ class Dsnewsletter extends Module
         if ($id_newsletter) {
             $this->fields_form[0]['form']['buttons']['sent-test'] = array(
                 'id' => 'desc-dsnewsletter-sent-test',
-                'title' => $this->l('Sent test email'),
+                'title' => $this->l('Send test email'),
                 'href' => $this->getAdminUrl(
                     array('sent_test_newsletter' => 1, 'id_dsnewsletter' => $newsletter->id)
                 ),
@@ -2495,7 +2495,9 @@ class Dsnewsletter extends Module
         }
         $sql .= ' GROUP BY c.id_customer';
 
-        return $this->DbExecuteS($sql);
+        $result = $this->DbExecuteS($sql);
+
+        return $result;
     }
 
     public function getNewsByIds($ids)

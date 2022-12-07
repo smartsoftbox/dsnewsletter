@@ -70,5 +70,5 @@
     </div>
 </div>
 <script>
-    var stats = {$stats|escape:'htmlall':'UTF-8'};
+    var stats = {$stats};
 </script>

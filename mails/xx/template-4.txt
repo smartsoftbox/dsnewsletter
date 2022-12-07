@@ -1,0 +1,8 @@
+You're almost there!
+We noticed that you were browsing our shop but that you haven't checked out. Please feel free to contact us if you have any question.
+
+$50
+VTB5B7UW
+
+{{shop.name}}
+Powered by PrestaShop

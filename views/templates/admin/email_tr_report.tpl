@@ -32,7 +32,7 @@
       {if count($result.errors)}
           {l s='Error sending following emails' d='dsnewsletter'}
       {else}
-          {l s='All emails sent correct.' d='dsnewsletter'}
+          {l s='All emails send correct.' d='dsnewsletter'}
       {/if}
     </td>
   </tr>

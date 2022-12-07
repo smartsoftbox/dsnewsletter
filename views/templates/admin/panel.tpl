@@ -90,7 +90,7 @@
         <li style="background:#D6682;">
           <a href="http://storepresta.com/docs/advanced-newsletter/getting-started/sent-newsletter-only-to-specfic-customer/"
              target="_blank">
-            Sent newsletter only to specfic customer
+            Send newsletter only to specfic customer
           </a>
         </li>
         <li style="background:#D6682;">

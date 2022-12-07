@@ -1,0 +1,17 @@
+FRESH FEATURED PRODUCTS FROM OUR MARKETPLACE
+A collection of cool featured products selected for you.
+{{product_featured.0.name}}
+{{product_featured.0.desc_80}}
+Button ({{click_wrapper}}{{product_featured.0.url}})
+{{product_featured.1.name}}
+{{product_featured.1.desc_80}}
+Button ({{click_wrapper}}{{product_featured.1.url}})
+{{product_featured.2.name}}
+{{product_featured.2.desc_80}}
+Button ({{click_wrapper}}{{product_featured.2.url}})
+{{product_featured.3.name}}
+{{product_featured.3.desc_80}}
+Button ({{click_wrapper}}{{product_featured.3.url}})
+
+{{shop_name}}
+Powered by PrestaShop

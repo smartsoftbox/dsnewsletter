@@ -15,7 +15,8 @@
         <div class="block-mail" >
             <div class="mail-form">
                 <div class="thumbnail mail-html-frame">
-                    {$html_content_with_tags|escape:'html':'UTF-8'}
+                    {* This is html preview for admin only *}
+                    {$html_content_with_tags}
                 </div>
             </div>
         </div>
@@ -40,7 +41,7 @@
 
     <script type="module" crossorigin src="../modules/dsnewsletter/views/js/easy.js"></script>
     <link rel="modulepreload" href="../modules/dsnewsletter/views/js/vendor.js">
-    <link rel="stylesheet" href="../modules/dsnewsletter/views/css/index.css">
+    <link rel="stylesheet" href="../modules/dsnewsletter/views/css/easy.css">
 
     <script>
         let id_template = '{$id_template|escape:'html':'UTF-8'}';
