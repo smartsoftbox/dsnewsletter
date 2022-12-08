@@ -83,7 +83,7 @@ class Dsnewsletter extends Module
 
         $languages = Language::getLanguages(false);
         foreach ($languages as $language) {
-            $this->makePath(dirname(__FILE__) . '/views/mails/' . $language['iso_code']);
+            $this->makePath(dirname(__FILE__) . '/mails/' . $language['iso_code']);
             $this->recurseCopy(
                 dirname(__FILE__) . '/mails/xx/',
                 dirname(__FILE__) . '/mails/' . $language['iso_code'] . '/'
@@ -289,7 +289,7 @@ class Dsnewsletter extends Module
     private function deleteDir($dirPath, $deleteparent = true, $leaveIndex = false)
     {
         if (!is_dir($dirPath)) {
-            throw new InvalidArgumentException("$dirPath must be a directory");
+            return true;
         }
 
         if (Tools::substr($dirPath, Tools::strlen($dirPath) - 1, 1) != '/') {
