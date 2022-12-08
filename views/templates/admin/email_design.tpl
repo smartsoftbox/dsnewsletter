@@ -29,7 +29,7 @@
                         {$text_content|escape:'html':'UTF-8'}
                     </textarea>
                 </div>
-                <span id="generate" class="btn-tag btn btn-default">auto generate</span>
+{*                <span id="generate" class="btn-tag btn btn-default">auto generate</span>*}
             </div>
         </div>
     </div>
